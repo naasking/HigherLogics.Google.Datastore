@@ -35,6 +35,8 @@ namespace MapperTests
             Assert.Equal(x.Baz, y.Baz);
             Assert.Equal(x.Bar, e["Bar"]);
             Assert.Equal(x.Baz, e["Baz"]);
+            Assert.NotEqual(x.Bar, e["Baz"].IntegerValue);
+            Assert.NotEqual(x.Baz, e["Bar"].StringValue);
         }
 
         [Fact]
@@ -57,6 +59,8 @@ namespace MapperTests
             Assert.Equal(x.Id.ToByteArray(), e["Id"]);
             Assert.Equal(x.Uri.ToString(), e["Uri"]);
             Assert.Equal(x.Amount, Value<decimal>.From(e["Amount"]));
+            Assert.NotEqual(x.Id.ToByteArray(), e["Uri"]);
+            Assert.NotEqual(x.Uri.ToString(), e["Id"]);
         }
     }
 }
