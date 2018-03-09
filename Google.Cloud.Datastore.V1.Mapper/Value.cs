@@ -3,7 +3,6 @@ using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using W = Google.Protobuf.WellKnownTypes;
 
 namespace Google.Cloud.Datastore.V1.Mapper
@@ -26,17 +25,18 @@ namespace Google.Cloud.Datastore.V1.Mapper
 
         static Value()
         {
-            // try to load implicit and explicit conversions that are provided in
-            // Google's protobuf library, and if that fails, search for
-            // conversions provided as static methods on this class.
+            // first search for conversions provided as static methods on this class, which may override
+            // the default conversions provided by Google's library, then fall back to Google's defaults
+            //FIXME: need to specially handle: enums, arrays
             var type = typeof(T);
             var toTypes = new[] { type };
-            var to = typeof(Value).GetMethod("op_Implicit", toTypes)
-                  ?? typeof(Value<T>).GetMethod(typeof(T).Name, toTypes);
-            var from = typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-                                    .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal))
-                    ?? typeof(Value<T>).GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-                                       .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal));
+            var to = typeof(Value<T>).GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+                                     .SingleOrDefault(x => x.Name == type.Name && x.ReturnType == typeof(Value))
+                  ?? typeof(Value).GetMethod("op_Implicit", toTypes);
+            var from = typeof(Value<T>).GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+                                       .SingleOrDefault(x => x.ReturnType == type)
+                    ?? typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                    .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal));
             if (to != null && from != null)
                 Overload((Func<Value, T>)from.CreateDelegate(typeof(Func<Value, T>)),
                          (Func<T, Value>)to.CreateDelegate(typeof(Func<T, Value>)));
@@ -56,13 +56,29 @@ namespace Google.Cloud.Datastore.V1.Mapper
         }
 
         #region Convenient overloads
-        [StructLayout(LayoutKind.Explicit)]
-        struct Union
-        {
-            //FIXME: is this endian sensitive?
-            [FieldOffset(0)] public long[] L;
-            [FieldOffset(0)] public int[] I;
-        }
+        static int Int32(Value x) => (int)x.IntegerValue;
+        static Value Int32(int x) => x;
+
+        static short Int16(Value x) => (short)x.IntegerValue;
+        static Value Int16(short x) => x;
+
+        static sbyte SByte(Value x) => (sbyte)x.IntegerValue;
+        static Value SByte(sbyte x) => x;
+
+        static ulong UInt64(Value x) => unchecked((ulong)x.IntegerValue);
+        static Value UInt64(ulong x) => unchecked((long)x);
+
+        static uint UInt32(Value x) => (uint)x.IntegerValue;
+        static Value UInt32(uint x) => x;
+
+        static ushort UInt16(Value x) => (ushort)x.IntegerValue;
+        static Value UInt16(ushort x) => x;
+
+        static byte Byte(Value x) => (byte)x.IntegerValue;
+        static Value Byte(byte x) => x;
+
+        static float Single(Value x) => (float)x.DoubleValue;
+        static Value Single(float x) => x;
 
         static decimal Decimal(Value v)
         {
@@ -73,6 +89,17 @@ namespace Google.Cloud.Datastore.V1.Mapper
         static Value Decimal(decimal x)
         {
             return new Union { I = decimal.GetBits(x) }.L;
+        }
+
+        static Value DateTime(DateTime x)
+        {
+            switch (x.Kind)
+            {
+                case DateTimeKind.Utc: return x;
+                case DateTimeKind.Local: return x.ToUniversalTime();
+                default:
+                    throw new ArgumentException("DateTime.Kind must be either local or UTC.");
+            }
         }
 
         static Stream Stream(Value v) => new MemoryStream((byte[])v);
