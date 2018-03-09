@@ -112,5 +112,13 @@ namespace MapperTests
             Assert.Equal(x, Value<decimal>.From(e));
         }
 
+        [Fact]
+        public static void Boolean()
+        {
+            var x = true;
+            Value e = x;
+            Assert.Equal(x, Value<bool>.From(e));
+        }
+
     }
 }
