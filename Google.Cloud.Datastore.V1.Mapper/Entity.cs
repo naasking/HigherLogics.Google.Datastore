@@ -24,9 +24,11 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         public static Func<T, Entity, Entity> To { get; private set; }
 
+        //public static Func<T> Create { get; private set; }
+
         static Entity()
         {
-            Config.Mapper.Map<T>(out var from, out var to);
+            Mapper.Default.Map<T>(out var from, out var to);
             From = from;
             To = to;
         }

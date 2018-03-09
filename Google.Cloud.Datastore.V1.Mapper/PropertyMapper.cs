@@ -11,6 +11,10 @@ namespace Google.Cloud.Datastore.V1.Mapper
     /// </summary>
     public class PropertyMapper : IEntityMapper
     {
+        //FIXME: consider including System.ComponentModel.DataAnnotations, because inserts/upserts
+        //update the in-memory/partial keys. We can find the key inside the entity via [Key] and
+        //set the property on completion.
+
         public void Map<T>(out Func<Entity, T, T> From, out Func<T, Entity, Entity> To)
             where T : class
         {
@@ -36,17 +40,32 @@ namespace Google.Cloud.Datastore.V1.Mapper
             }
             From = (e, obj) =>
             {
+                if (obj == null) throw new ArgumentNullException("entity");
+                if (e == null) return obj;
                 foreach (var x in from)
                     x(e, obj);
                 return obj;
             };
             To = (obj, e) =>
             {
+                if (e == null) throw new ArgumentNullException("entity");
+                if (obj == null) return e;
                 foreach (var x in to)
                     x(obj, e);
                 return e;
             };
         }
+
+        // These are both very, very slow:
+        //T Create<T>() where T : new()
+        //{
+        //    return new T();
+        //}
+
+        //Func<T> Create<T>(ConstructorInfo ctor)
+        //{
+        //    return () => (T)ctor.Invoke(null);
+        //}
 
         static Action<Entity, T> Set<T, TField>(string name, Action<T, TField> setter) =>
             (e, obj) => setter(obj, Value<TField>.From(e[name]));

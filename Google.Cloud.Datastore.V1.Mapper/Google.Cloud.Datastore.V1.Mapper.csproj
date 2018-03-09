@@ -12,6 +12,12 @@
     <PackageReleaseNotes>Initial release supporting simple convention-based property mappings.</PackageReleaseNotes>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netstandard1.5\Google.Cloud.Datastore.V1.Mapper.xml</DocumentationFile>
+    <WarningLevel>3</WarningLevel>
+    <WarningsAsErrors>NU1605;1591</WarningsAsErrors>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="google.cloud.datastore.v1" Version="2.1.0" />
     <PackageReference Include="system.reflection.typeextensions" Version="4.4.0" />
