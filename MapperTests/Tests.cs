@@ -88,18 +88,28 @@ namespace MapperTests
             Assert.Equal(now, Value<DateTimeOffset>.From(e));
         }
 
-        [Fact]
-        public static void Double()
+        [Theory]
+        [InlineData(double.MaxValue / 3)]
+        [InlineData(double.MaxValue / 99)]
+        [InlineData(double.MaxValue / 99999)]
+        [InlineData(double.MinValue / 3)]
+        [InlineData(double.MinValue / 99)]
+        [InlineData(double.MinValue / 99999)]
+        public static void Double(double x)
         {
-            var x = double.MaxValue / 3;
             Value e = x;
             Assert.Equal(x, Value<double>.From(e));
         }
 
-        [Fact]
-        public static void Float()
+        [Theory]
+        [InlineData(float.MaxValue / 3)]
+        [InlineData(float.MaxValue / 99)]
+        [InlineData(float.MaxValue / 99999)]
+        [InlineData(float.MinValue / 3)]
+        [InlineData(float.MinValue / 99)]
+        [InlineData(float.MinValue / 99999)]
+        public static void Float(float x)
         {
-            var x = float.MaxValue / 3;
             Value e = x;
             Assert.Equal(x, Value<float>.From(e));
         }
@@ -112,13 +122,23 @@ namespace MapperTests
             Assert.Equal(x, Value<decimal>.From(e));
         }
 
-        [Fact]
-        public static void Boolean()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public static void Boolean(bool x)
         {
-            var x = true;
             Value e = x;
             Assert.Equal(x, Value<bool>.From(e));
         }
 
+        [Theory]
+        [InlineData(long.MaxValue / 999999)]
+        [InlineData(long.MaxValue / 99)]
+        public static void TimeSpans(long ticks)
+        {
+            var x = new TimeSpan(ticks);
+            Value e = Value<TimeSpan>.To(x);
+            Assert.Equal(x, Value<TimeSpan>.From(e));
+        }
     }
 }

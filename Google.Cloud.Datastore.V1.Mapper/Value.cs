@@ -102,6 +102,9 @@ namespace Google.Cloud.Datastore.V1.Mapper
             }
         }
 
+        static TimeSpan TimeSpan(Value x) => new TimeSpan(x.IntegerValue);
+        static Value TimeSpan(TimeSpan x) => x.Ticks;
+
         static Stream Stream(Value v) => new MemoryStream((byte[])v);
 
         static Value Stream(Stream x) => Google.Protobuf.ByteString.FromStream(x);
