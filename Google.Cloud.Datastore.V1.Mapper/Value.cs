@@ -27,7 +27,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         {
             // first search for conversions provided as static methods on this class, which may override
             // the default conversions provided by Google's library, then fall back to Google's defaults
-            //FIXME: need to specially handle: enums, arrays
+            //FIXME: need to specially handle: enums, arrays, maybe Version, maybe tuples and value tuples?
             var type = typeof(T);
             var toTypes = new[] { type };
             var to = typeof(Value<T>).GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
