@@ -2,6 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.5</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.0-RC1</Version>
+    <Description>A simple entity auto-mapper.</Description>
+    <Copyright>Sandro Magi 2018</Copyright>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/naasking/Google.Cloud.Datastore.V1.Mapper</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/naasking/Google.Cloud.Datastore.V1.Mapper</RepositoryUrl>
+    <PackageReleaseNotes>Initial release supporting simple convention-based property mappings.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
