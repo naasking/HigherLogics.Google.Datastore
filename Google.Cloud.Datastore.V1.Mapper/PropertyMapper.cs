@@ -15,6 +15,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             // read/write entities and values using delegates generated from method-backed properties
+            //FIXME: need to ensure entity keys are properly deserialized. Are they in the entity?
             var objType = typeof(T);
             var from = new List<Action<Entity, T>>();
             var to = new List<Action<T, Entity>>();

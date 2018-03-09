@@ -184,5 +184,13 @@ namespace MapperTests
             Value e = Value<Guid>.To(x);
             Assert.Equal(x, Value<Guid>.From(e));
         }
+
+
+        [Fact]
+        public static void Errors()
+        {
+            Assert.Throws<InvalidOperationException>(() => Value<Assert>.From(new Value()));
+            Assert.Throws<InvalidOperationException>(() => Value<IntPtr>.To(new IntPtr()));
+        }
     }
 }
