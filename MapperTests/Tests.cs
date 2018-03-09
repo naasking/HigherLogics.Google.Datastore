@@ -89,6 +89,8 @@ namespace MapperTests
         }
 
         [Theory]
+        [InlineData(double.MaxValue)]
+        [InlineData(double.MinValue)]
         [InlineData(double.MaxValue / 3)]
         [InlineData(double.MaxValue / 99)]
         [InlineData(double.MaxValue / 99999)]
@@ -102,6 +104,8 @@ namespace MapperTests
         }
 
         [Theory]
+        [InlineData(float.MaxValue)]
+        [InlineData(float.MinValue)]
         [InlineData(float.MaxValue / 3)]
         [InlineData(float.MaxValue / 99)]
         [InlineData(float.MaxValue / 99999)]
@@ -132,6 +136,8 @@ namespace MapperTests
         }
 
         [Theory]
+        [InlineData(long.MaxValue)]
+        [InlineData(long.MinValue)]
         [InlineData(long.MaxValue / 999999)]
         [InlineData(long.MaxValue / 99)]
         public static void TimeSpans(long ticks)
@@ -139,6 +145,44 @@ namespace MapperTests
             var x = new TimeSpan(ticks);
             Value e = Value<TimeSpan>.To(x);
             Assert.Equal(x, Value<TimeSpan>.From(e));
+        }
+
+        [Theory]
+        [InlineData('c')]
+        [InlineData(char.MaxValue)]
+        [InlineData(char.MinValue)]
+        public static void Chars(char x)
+        {
+            Value e = Value<char>.To(x);
+            Assert.Equal(x, Value<char>.From(e));
+        }
+
+        [Theory]
+        [InlineData("http://microsoft.com")]
+        [InlineData("file://foo/bar/")]
+        public static void Uris(string uri)
+        {
+            var x = new Uri(uri);
+            Value e = Value<Uri>.To(x);
+            Assert.Equal(x, Value<Uri>.From(e));
+        }
+
+        [Theory]
+        [InlineData(typeof(int))]
+        [InlineData(typeof(Tests))]
+        [InlineData(typeof(Value))]
+        public static void Types(Type x)
+        {
+            Value e = Value<Type>.To(x);
+            Assert.Equal(x, Value<Type>.From(e));
+        }
+
+        [Fact]
+        public static void Guids()
+        {
+            var x = Guid.NewGuid();
+            Value e = Value<Guid>.To(x);
+            Assert.Equal(x, Value<Guid>.From(e));
         }
     }
 }

@@ -105,6 +105,18 @@ namespace Google.Cloud.Datastore.V1.Mapper
         static TimeSpan TimeSpan(Value x) => new TimeSpan(x.IntegerValue);
         static Value TimeSpan(TimeSpan x) => x.Ticks;
 
+        static Guid Guid(Value x) => new System.Guid(x.BlobValue.ToByteArray());
+        static Value Guid(Guid x) => x.ToByteArray();
+
+        static char Char(Value x) => x.StringValue[0];
+        static Value Char(char x) => x.ToString();
+
+        static Uri Uri(Value x) => new System.Uri(x.StringValue);
+        static Value Uri(Uri x) => x.ToString();
+
+        static System.Type Type(Value x) => System.Type.GetType(x.StringValue);
+        static Value Type(System.Type x) => x.AssemblyQualifiedName;
+
         static Stream Stream(Value v) => new MemoryStream((byte[])v);
 
         static Value Stream(Stream x) => Google.Protobuf.ByteString.FromStream(x);
