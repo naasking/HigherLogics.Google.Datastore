@@ -15,7 +15,8 @@ namespace Google.Cloud.Datastore.V1.Mapper
         //update the in-memory/partial keys. We can find the key inside the entity via [Key] and
         //set the property on completion.
 
-        public void Map<T>(out Func<Entity, T, T> From, out Func<T, Entity, Entity> To)
+        /// <inheritdoc />
+        public void Map<T>(out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
             where T : class
         {
             // read/write entities and values using delegates generated from method-backed properties
@@ -38,7 +39,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
                 to.Add((Action<T, Entity>)sget.MakeGenericMethod(objType, member.PropertyType)
                     .Invoke(null, new object[] { member.Name, member.GetGetMethod().CreateDelegate(tget) }));
             }
-            From = (e, obj) =>
+            From = (obj, e) =>
             {
                 if (obj == null) throw new ArgumentNullException("entity");
                 if (e == null) return obj;
@@ -46,7 +47,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
                     x(e, obj);
                 return obj;
             };
-            To = (obj, e) =>
+            To = (e, obj) =>
             {
                 if (e == null) throw new ArgumentNullException("entity");
                 if (obj == null) return e;
