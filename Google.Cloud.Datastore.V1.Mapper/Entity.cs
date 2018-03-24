@@ -17,12 +17,12 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <summary>
         /// Update a value with the given entity.
         /// </summary>
-        public static Func<Entity, T, T> From { get; private set; }
+        public static Func<T, Entity, T> From { get; private set; }
 
         /// <summary>
         /// Update an entity with the given value.
         /// </summary>
-        public static Func<T, Entity, Entity> To { get; private set; }
+        public static Func<Entity, T, Entity> To { get; private set; }
 
         //public static Func<T> Create { get; private set; }
 

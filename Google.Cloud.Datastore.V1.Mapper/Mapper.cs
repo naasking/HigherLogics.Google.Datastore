@@ -31,7 +31,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static T Lookup<T>(this DatastoreDb db, T entity, Key key, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
-            return Entity<T>.From(db.Lookup(key, readConsistency, callSettings), entity);
+            return Entity<T>.From(entity, db.Lookup(key, readConsistency, callSettings));
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static async Task<T> LookupAsync<T>(this DatastoreDb db, T entity, Key key, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
-            return Entity<T>.From(await db.LookupAsync(key, readConsistency, callSettings), entity);
+            return Entity<T>.From(entity, await db.LookupAsync(key, readConsistency, callSettings));
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         {
             if (create == null) throw new ArgumentNullException(nameof(create));
             return db.Lookup(keys, readConsistency, callSettings)
-                     .Select(e => e == null ? default(T) : Entity<T>.From(e, create()))
+                     .Select(e => e == null ? default(T) : Entity<T>.From(create(), e))
                      .ToList();
         }
 
@@ -107,7 +107,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         {
             if (create == null) throw new ArgumentNullException(nameof(create));
             var entities = await db.LookupAsync(keys, readConsistency, callSettings);
-            return entities.Select(e => e == null ? default(T) : Entity<T>.From(e, create()))
+            return entities.Select(e => e == null ? default(T) : Entity<T>.From(create(), e))
                            .ToList();
         }
 
@@ -144,7 +144,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Key Insert<T>(this DatastoreDb db, T entity, CallSettings callSettings = null)
             where T : class
         {
-            return db.Insert(Entity<T>.To(entity, new Entity()), callSettings);
+            return db.Insert(Entity<T>.To(new Entity(), entity), callSettings);
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Task<Key> InsertAsync<T>(this DatastoreDb db, T entity, CallSettings callSettings = null)
             where T : class
         {
-            return db.InsertAsync(Entity<T>.To(entity, new Entity()), callSettings);
+            return db.InsertAsync(Entity<T>.To(new Entity(), entity), callSettings);
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.Insert(entities.Select(x => Entity<T>.To(x, new Entity())), callSettings);
+            return db.Insert(entities.Select(x => Entity<T>.To(new Entity(), x)), callSettings);
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.InsertAsync(entities.Select(x => Entity<T>.To(x, new Entity())), callSettings);
+            return db.InsertAsync(entities.Select(x => Entity<T>.To(new Entity(), x)), callSettings);
         }
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static void Delete<T>(this DatastoreDb db, T entity, CallSettings callSettings = null)
             where T : class
         {
-            db.Delete(Entity<T>.To(entity, new Entity()), callSettings);
+            db.Delete(Entity<T>.To(new Entity(), entity), callSettings);
         }
 
         /// <summary>
@@ -264,7 +264,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Task DeleteAsync<T>(this DatastoreDb db, T entity, CallSettings callSettings = null)
             where T : class
         {
-            return db.DeleteAsync(Entity<T>.To(entity, new Entity()), callSettings);
+            return db.DeleteAsync(Entity<T>.To(new Entity(), entity), callSettings);
         }
 
         /// <summary>
@@ -278,7 +278,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            db.Delete(entities.Select(x => Entity<T>.To(x, new Entity())), callSettings);
+            db.Delete(entities.Select(x => Entity<T>.To(new Entity(), x)), callSettings);
         }
 
         /// <summary>
@@ -293,7 +293,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.DeleteAsync(entities.Select(x => Entity<T>.To(x, new Entity())), callSettings);
+            return db.DeleteAsync(entities.Select(x => Entity<T>.To(new Entity(), x)), callSettings);
         }
 
         /// <summary>
@@ -334,7 +334,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
-            db.Update(Entity<T>.To(entity, new Entity()), callSettings);
+            db.Update(Entity<T>.To(new Entity(), entity), callSettings);
         }
 
         /// <summary>
@@ -348,7 +348,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entity == null) throw new ArgumentNullException(nameof(entity));
-            return db.UpdateAsync(Entity<T>.To(entity, new Entity()), callSettings);
+            return db.UpdateAsync(Entity<T>.To(new Entity(), entity), callSettings);
         }
 
         /// <summary>
@@ -365,7 +365,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             db.Update(entities.Select(x =>
             {
                 if (x == null) throw new ArgumentNullException(nameof(x));
-                return Entity<T>.To(x, new Entity());
+                return Entity<T>.To(new Entity(), x);
             }), callSettings);
         }
 
@@ -384,7 +384,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             return db.UpdateAsync(entities.Select(x =>
             {
                 if (x == null) throw new ArgumentNullException(nameof(x));
-                return Entity<T>.To(x, new Entity());
+                return Entity<T>.To(new Entity(), x);
             }), callSettings);
         }
 
@@ -428,7 +428,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Key Upsert<T>(this DatastoreDb db, T entity, CallSettings callSettings = null)
             where T : class
         {
-            return db.Upsert(Entity<T>.To(entity, new Entity()), callSettings);
+            return db.Upsert(Entity<T>.To(new Entity(), entity), callSettings);
         }
 
         /// <summary>
@@ -443,7 +443,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Task<Key> UpsertAsync<T>(this DatastoreDb db, T entity, CallSettings callSettings = null)
             where T : class
         {
-            return db.UpsertAsync(Entity<T>.To(entity, new Entity()), callSettings);
+            return db.UpsertAsync(Entity<T>.To(new Entity(), entity), callSettings);
         }
 
         /// <summary>
@@ -462,7 +462,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.Upsert(entities.Select(x => Entity<T>.To(x, new Entity())), callSettings);
+            return db.Upsert(entities.Select(x => Entity<T>.To(new Entity(), x)), callSettings);
         }
 
         /// <summary>
@@ -481,7 +481,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.UpsertAsync(entities.Select(x => Entity<T>.To(x, new Entity())), callSettings);
+            return db.UpsertAsync(entities.Select(x => Entity<T>.To(new Entity(), x)), callSettings);
         }
 
         /// <summary>
@@ -546,7 +546,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
             if (create == null) throw new ArgumentNullException(nameof(create));
-            return entities.Select(x => Entity<T>.From(x, create()));
+            return entities.Select(x => Entity<T>.From(create(), x));
         }
 
         /// <summary>
@@ -584,7 +584,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             public async Task<bool> MoveNext(CancellationToken token)
             {
                 var result = await entities.MoveNext(token);
-                Current = Entity<T>.From(entities.Current, create());
+                Current = Entity<T>.From(create(), entities.Current);
                 return result;
             }
             public void Dispose()
