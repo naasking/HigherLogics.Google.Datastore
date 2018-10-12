@@ -58,16 +58,6 @@ namespace Google.Cloud.Datastore.V1.Mapper
             };
         }
 
-        static Func<T, KeyFactory, Key> GetLongKey<T>(Func<T, long> getKey)
-        {
-            return (e, kf) => kf.CreateKey(getKey(e));
-        }
-
-        static Func<T, KeyFactory, Key> GetStringKey<T>(Func<T, string> getKey)
-        {
-            return (e, kf) => kf.CreateKey(getKey(e));
-        }
-
         // These are both very, very slow:
         //T Create<T>() where T : new()
         //{
