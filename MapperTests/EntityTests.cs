@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using System.ComponentModel;
 using Xunit;
 using Google.Cloud.Datastore.V1;
 using Google.Cloud.Datastore.V1.Mapper;
@@ -61,6 +62,42 @@ namespace MapperTests
             Assert.Equal(x.Amount, Value<decimal>.From(e["Amount"]));
             Assert.NotEqual(x.Id.ToByteArray(), e["Uri"]);
             Assert.NotEqual(x.Uri.ToString(), e["Id"]);
+        }
+
+        public class Account
+        {
+            public Account(DateTime created)
+            {
+                Created = created;
+            }
+            public WeightUnits WeightUnits { get; set; }
+            public string Name { get; set; }
+            public DateTime Created { get; set; }
+
+            //FIXME: maybe this should be a property of a Workout
+            public Progression Progression { get; set; }
+        }
+        public enum Progression
+        {
+            Novice = 0,
+            Linear,
+            Double,
+            Undulating,
+        }
+
+        public enum WeightUnits
+        {
+            Kilograms = 0,
+            Pounds,
+        }
+
+        [Fact]
+        public static void AccountTests()
+        {
+            var x = new Account(DateTime.Now)
+            {
+            };
+            var e = Entity<Account>.To;
         }
     }
 }
