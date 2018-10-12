@@ -14,6 +14,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         //FIXME: consider including System.ComponentModel.DataAnnotations, because inserts/upserts
         //update the in-memory/partial keys. We can find the key inside the entity via [Key] and
         //set the property on completion.
+        static readonly System.Type[] validKeys = new[] { typeof(string), typeof(long) };
 
         /// <inheritdoc />
         public void Map<T>(out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
@@ -55,6 +56,16 @@ namespace Google.Cloud.Datastore.V1.Mapper
                     x(obj, e);
                 return e;
             };
+        }
+
+        static Func<T, KeyFactory, Key> GetLongKey<T>(Func<T, long> getKey)
+        {
+            return (e, kf) => kf.CreateKey(getKey(e));
+        }
+
+        static Func<T, KeyFactory, Key> GetStringKey<T>(Func<T, string> getKey)
+        {
+            return (e, kf) => kf.CreateKey(getKey(e));
         }
 
         // These are both very, very slow:
