@@ -11,17 +11,11 @@ namespace Google.Cloud.Datastore.V1.Mapper
     /// </summary>
     public class PropertyMapper : IEntityMapper
     {
-        //FIXME: consider including System.ComponentModel.DataAnnotations, because inserts/upserts
-        //update the in-memory/partial keys. We can find the key inside the entity via [Key] and
-        //set the property on completion.
-        static readonly System.Type[] validKeys = new[] { typeof(string), typeof(long) };
-
         /// <inheritdoc />
         public void Map<T>(out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
             where T : class
         {
             // read/write entities and values using delegates generated from method-backed properties
-            //FIXME: need to ensure entity keys are properly deserialized. Are they in the entity?
             var objType = typeof(T);
             var from = new List<Action<Entity, T>>();
             var to = new List<Action<T, Entity>>();
@@ -29,6 +23,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             var sget = new Func<string, Func<T, int>, Action<T, Entity>>(Get).GetMethodInfo().GetGenericMethodDefinition();
             foreach (var member in typeof(T).GetProperties())
             {
+                // extract delegates from Value<TProperty>.From/To for each member of T
                 var vals = typeof(Value<>).MakeGenericType(member.PropertyType);
                 var f = vals.GetProperty("From", BindingFlags.Static | BindingFlags.Public);
                 var tset = typeof(Action<,>).MakeGenericType(objType, member.PropertyType);

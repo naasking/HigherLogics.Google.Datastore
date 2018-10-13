@@ -155,7 +155,6 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Key Insert<T>(this DatastoreDb db, T entity, Key key, CallSettings callSettings = null)
             where T : class
         {
-            //FIXME: T might have a [Key] field, so use that if it does. Otherwise, require the KeyFactory.
             var e = new Entity { Key = key };
             return db.Insert(Entity<T>.To(e, entity), callSettings);
         }

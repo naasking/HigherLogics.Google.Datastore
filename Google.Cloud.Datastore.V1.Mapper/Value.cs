@@ -10,7 +10,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
     /// <summary>
     /// Convert serialized values into CLR values.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of value.</typeparam>
     public static class Value<T>
     {
         /// <summary>
@@ -25,18 +25,62 @@ namespace Google.Cloud.Datastore.V1.Mapper
 
         static Value()
         {
-            // first search for conversions provided as static methods on this class, which may override
-            // the default conversions provided by Google's library, then fall back to Google's defaults
             //FIXME: need to specially handle: enums, arrays, maybe Version, maybe tuples and value tuples?
+            //FIXME: use an entity conversion if no overload available.
             var type = typeof(T);
             var toTypes = new[] { type };
-            var to = typeof(Value<T>).GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-                                     .SingleOrDefault(x => x.Name == type.Name && x.ReturnType == typeof(Value))
+            MethodInfo to, from;
+            if (type.IsArray)
+            {
+                // Extract the array element type and then search for a matching conversion in Value.
+                // If none present, then use the generic Convert.Array methods.
+                var elem = type.GetElementType();
+                to = typeof(Value).GetMethod("op_Implicit", toTypes)
+                  ?? new Func<int[], Value>(Convert.Array<int>).GetMethodInfo()
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(elem);
+                from = typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                    .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal))
+                    ?? new Func<Value, int[]>(Convert.Array<int>).GetMethodInfo()
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(elem);
+            }
+            else if (type.IsConstructedGenericType)
+            {
+                // handle some generic types like IEnumerable<T>, IList<T>, etc.
+                var baseType = type.GetGenericTypeDefinition();
+                var baseName = baseType.Name.Remove(baseType.Name.LastIndexOf('`'));
+                var tval = typeof(Value);
+                to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                                    .SingleOrDefault(x => x.Name == baseName && x.ReturnType == tval)
+                                    ?.MakeGenericMethod(type.GetGenericArguments());
+                from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                                      .SingleOrDefault(x => x.Name == baseName && x.ReturnType != tval)
+                                      ?.MakeGenericMethod(type.GetGenericArguments());
+            }
+            else
+            {
+                // First search for conversions provided as static methods on this class which may override
+                // the default conversions provided by Google's library, then fall back to Google's defaults.
+                // This is because searching for a conversion for Byte will return the conversion for Int64.
+                to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                                    .SingleOrDefault(x => x.Name == type.Name && x.ReturnType == typeof(Value))
                   ?? typeof(Value).GetMethod("op_Implicit", toTypes);
-            var from = typeof(Value<T>).GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-                                       .SingleOrDefault(x => x.ReturnType == type)
+                from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                                      .SingleOrDefault(x => x.ReturnType == type)
                     ?? typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                     .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal));
+            }
+            // If no match succeeds and T is a reference type then treat it like an entity
+            if (to == null && from == null && !type.GetTypeInfo().IsValueType)
+            {
+                to = new Func<Value, object>(Convert.Entity<object>).GetMethodInfo()
+                    .GetGenericMethodDefinition()
+                    .MakeGenericMethod(type);
+                from = new Func<object, Value>(Convert.Entity<object>).GetMethodInfo()
+                    .GetGenericMethodDefinition()
+                    .MakeGenericMethod(type);
+            }
             if (to != null && from != null)
                 Override((Func<Value, T>)from.CreateDelegate(typeof(Func<Value, T>)),
                          (Func<T, Value>)to.CreateDelegate(typeof(Func<T, Value>)));
@@ -48,7 +92,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         }
 
         /// <summary>
-        /// Overload the value conversions to/from Protobuf's <see cref="Value"/> type.
+        /// Override the value conversions to/from Protobuf's <see cref="Value"/> type.
         /// </summary>
         /// <param name="from"></param>
         /// <param name="to"></param>
@@ -57,75 +101,5 @@ namespace Google.Cloud.Datastore.V1.Mapper
             From = from ?? throw new ArgumentNullException(nameof(from));
             To = to ?? throw new ArgumentNullException(nameof(to));
         }
-
-        #region Convenient overloads
-        static int Int32(Value x) => (int)x.IntegerValue;
-        static Value Int32(int x) => x;
-
-        static short Int16(Value x) => (short)x.IntegerValue;
-        static Value Int16(short x) => x;
-
-        static sbyte SByte(Value x) => (sbyte)x.IntegerValue;
-        static Value SByte(sbyte x) => x;
-
-        static ulong UInt64(Value x) => unchecked((ulong)x.IntegerValue);
-        static Value UInt64(ulong x) => unchecked((long)x);
-
-        static uint UInt32(Value x) => (uint)x.IntegerValue;
-        static Value UInt32(uint x) => x;
-
-        static ushort UInt16(Value x) => (ushort)x.IntegerValue;
-        static Value UInt16(ushort x) => x;
-
-        static byte Byte(Value x) => (byte)x.IntegerValue;
-        static Value Byte(byte x) => x;
-
-        static float Single(Value x) => (float)x.DoubleValue;
-        static Value Single(float x) => x;
-
-        static decimal Decimal(Value v)
-        {
-            var x = v.ArrayValue.Values;
-            return new decimal(new Union { L = (long[])v }.I);
-        }
-
-        static Value Decimal(decimal x)
-        {
-            return new Union { I = decimal.GetBits(x) }.L;
-        }
-
-        static Value DateTime(DateTime x)
-        {
-            switch (x.Kind)
-            {
-                case DateTimeKind.Utc: return x;
-                case DateTimeKind.Local: return x.ToUniversalTime();
-                default:
-                    throw new ArgumentException("DateTime.Kind must be either local or UTC.");
-            }
-        }
-
-        static TimeSpan TimeSpan(Value x) => new TimeSpan(x.IntegerValue);
-        static Value TimeSpan(TimeSpan x) => x.Ticks;
-
-        static Guid Guid(Value x) => new System.Guid(x.BlobValue.ToByteArray());
-        static Value Guid(Guid x) => x.ToByteArray();
-
-        static char Char(Value x) => x.StringValue[0];
-        static Value Char(char x) => x.ToString();
-
-        static Uri Uri(Value x) => new System.Uri(x.StringValue);
-        static Value Uri(Uri x) => x.ToString();
-
-        static System.Type Type(Value x) => System.Type.GetType(x.StringValue);
-        static Value Type(System.Type x) => x.AssemblyQualifiedName;
-
-        static Stream Stream(Value v) => new MemoryStream((byte[])v);
-
-        static Value Stream(Stream x) => Google.Protobuf.ByteString.FromStream(x);
-
-        //FIXME: figure out array support
-
-        #endregion
     }
 }

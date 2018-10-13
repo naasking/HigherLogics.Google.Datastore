@@ -185,12 +185,44 @@ namespace MapperTests
             Assert.Equal(x, Value<Guid>.From(e));
         }
 
-
         [Fact]
         public static void Errors()
         {
             Assert.Throws<InvalidOperationException>(() => Value<Assert>.From(new Value()));
             Assert.Throws<InvalidOperationException>(() => Value<IntPtr>.To(new IntPtr()));
         }
+
+        [Fact]
+        public static void IntArrays()
+        {
+            var x = new[] { 0, int.MinValue, int.MaxValue, 99 };
+            var v = Value<int[]>.To(x);
+            Assert.Equal(x, Value<int[]>.From(v));
+        }
+
+        [Fact]
+        public static void StringArrays()
+        {
+            var x = new[] { "hello", "world", "!", };
+            var v = Value<string[]>.To(x);
+            Assert.Equal(x, Value<string[]>.From(v));
+        }
+
+        [Fact]
+        public static void DecimalArrays()
+        {
+            var x = new[] { 0M, decimal.MinValue, decimal.MaxValue, 99M };
+            var v = Value<decimal[]>.To(x);
+            Assert.Equal(x, Value<decimal[]>.From(v));
+        }
+
+        [Fact]
+        public static void IntEnumerable()
+        {
+            var x = new[] { 0, int.MinValue, int.MaxValue, 99 };
+            var v = Value<IEnumerable<int>>.To(x);
+            Assert.Equal(x, Value<IEnumerable<int>>.From(v));
+        }
+
     }
 }

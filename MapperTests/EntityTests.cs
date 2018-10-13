@@ -24,6 +24,13 @@ namespace MapperTests
         public Stream IO { get; set; }
     }
 
+    class Enumerable
+    {
+        public int[] Ints { get; set; }
+        public char[] Chars { get; set; }
+        public IEnumerable<float> Floats { get; set; }
+    }
+
     public class EntityTests
     {
         [Fact]
@@ -62,6 +69,22 @@ namespace MapperTests
             Assert.Equal(x.Amount, Value<decimal>.From(e["Amount"]));
             Assert.NotEqual(x.Id.ToByteArray(), e["Uri"]);
             Assert.NotEqual(x.Uri.ToString(), e["Id"]);
+        }
+
+        [Fact]
+        public static void EnumerableTests()
+        {
+            var x = new Enumerable
+            {
+                Ints = new[] { 99, 23, 239233948, int.MinValue, int.MaxValue, 0 },
+                Chars = "hello world!".ToCharArray(),
+                Floats = new[] { float.MinValue, float.MaxValue, 0, float.NegativeInfinity, float.PositiveInfinity, float.NaN },
+            };
+            var e = Entity<Enumerable>.To(new Entity(), x);
+            var y = Entity<Enumerable>.From(new Enumerable(), e);
+            Assert.Equal(x.Ints, y.Ints);
+            Assert.Equal(x.Chars, y.Chars);
+            Assert.Equal(x.Floats, y.Floats);
         }
     }
 }
