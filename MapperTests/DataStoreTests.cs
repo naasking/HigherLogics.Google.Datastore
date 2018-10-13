@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,6 +35,33 @@ namespace MapperTests
             var y = db2.Lookup(new Simple(), xkey);
             Assert.Equal(x.Bar, y.Bar);
             Assert.Equal(x.Baz, y.Baz);
+        }
+
+
+        [Fact]
+        public static void ComplexTests()
+        {
+            var x = new Complex
+            {
+                Id = Guid.NewGuid(),
+                Uri = new Uri("http://google.ca"),
+                Amount = 987654321M,
+                IO = new MemoryStream(Encoding.ASCII.GetBytes("hello world!")),
+            };
+            var db = Open();
+            var xkf = db.CreateKeyFactory<Complex>();
+            var xkey = db.Insert(x, xkf.CreateIncompleteKey());
+            var y = db.Lookup(new Complex(), xkey);
+            Assert.Equal(x.Id, y.Id);
+            Assert.Equal(x.Uri, y.Uri);
+            Assert.Equal(x.Amount, y.Amount);
+            y.IO.Position = x.IO.Position = 0;
+            Assert.Equal(new StreamReader(x.IO).ReadToEnd(), new StreamReader(y.IO).ReadToEnd());
+            //Assert.Equal(x.Id.ToByteArray(), e["Id"]);
+            //Assert.Equal(x.Uri.ToString(), e["Uri"]);
+            //Assert.Equal(x.Amount, Value<decimal>.From(e["Amount"]));
+            //Assert.NotEqual(x.Id.ToByteArray(), e["Uri"]);
+            //Assert.NotEqual(x.Uri.ToString(), e["Id"]);
         }
     }
 }

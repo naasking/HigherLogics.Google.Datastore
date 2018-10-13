@@ -4,12 +4,12 @@ A convention-based Google Datastore entities to POCO auto mapper:
 
     public class Foo
     {
-        public int Id { get; set; }
+        public int Baz { get; set; }
         public string Bar { get; set; }
     }
     ...
     var db = new Google.Cloud.Datastore.V1.DatastoreDb("MyProject");
-    var keys = db.CreateKeyFactory(nameof(Foo));
-    var fooId = keys.CreateKey(1234567);
-    // returns: { Id : 1234567, Bar : "hello world!" }
-    var foo = Entity<Foo>.From(db.Lookup(fooId), new Foo());
+	var fooKeys = db.CreateKeyFactory<Foo>();
+	var fooId = db.Insert(new Foo { Baz = 99, Bar = "Hello World!" }, fooKeys.CreateIncompleteKey());
+	var foo = db.Lookup(new Foo(), fooId);
+    // returns: { Baz : 99, Bar : "hello world!" }

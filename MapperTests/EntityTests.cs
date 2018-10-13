@@ -63,41 +63,5 @@ namespace MapperTests
             Assert.NotEqual(x.Id.ToByteArray(), e["Uri"]);
             Assert.NotEqual(x.Uri.ToString(), e["Id"]);
         }
-
-        public class Account
-        {
-            public Account(DateTime created)
-            {
-                Created = created;
-            }
-            public WeightUnits WeightUnits { get; set; }
-            public string Name { get; set; }
-            public DateTime Created { get; set; }
-
-            //FIXME: maybe this should be a property of a Workout
-            public Progression Progression { get; set; }
-        }
-        public enum Progression
-        {
-            Novice = 0,
-            Linear,
-            Double,
-            Undulating,
-        }
-
-        public enum WeightUnits
-        {
-            Kilograms = 0,
-            Pounds,
-        }
-
-        [Fact]
-        public static void AccountTests()
-        {
-            var x = new Account(DateTime.Now)
-            {
-            };
-            var e = Entity<Account>.To;
-        }
     }
 }
