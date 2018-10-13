@@ -12,22 +12,25 @@ namespace MapperTests
         [Fact]
         public static void String()
         {
-            Value e = "foo";
-            Assert.Equal("foo", Value<string>.From(e));
+            var s = "foo";
+            var e = Value<string>.To(s);
+            Assert.Equal(s, Value<string>.From(e));
         }
 
         [Fact]
         public static void Int32()
         {
-            Value e = 99;
-            Assert.Equal(99, Value<int>.From(e));
+            var i = 99;
+            var e = Value<int>.To(i);
+            Assert.Equal(i, Value<int>.From(e));
         }
 
         [Fact]
         public static void UInt32()
         {
-            Value e = (uint)99;
-            Assert.Equal((uint)99, Value<uint>.From(e));
+            uint i = 99;
+            var e = Value<uint>.To(i);
+            Assert.Equal(i, Value<uint>.From(e));
         }
 
         [Fact]
@@ -230,6 +233,14 @@ namespace MapperTests
             var x = new[] { 0M, decimal.MinValue, decimal.MaxValue, 99M };
             var v = Value<IEnumerable<decimal>>.To(x);
             Assert.Equal(x, Value<IEnumerable<decimal>>.From(v));
+        }
+        [Theory]
+        [InlineData(99)]
+        [InlineData(null)]
+        public static void NullableInt32(int? i)
+        {
+            var e = Value<int?>.To(i);
+            Assert.Equal(i, Value<int?>.From(e));
         }
     }
 }

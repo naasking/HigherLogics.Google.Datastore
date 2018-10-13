@@ -25,8 +25,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
 
         static Value()
         {
-            //FIXME: need to specially handle: enums, arrays, maybe Version, maybe tuples and value tuples?
-            //FIXME: use an entity conversion if no overload available.
+            //FIXME: need to specially handle: enums, maybe tuples and value tuples?
             var type = typeof(T);
             var toTypes = new[] { type };
             MethodInfo to, from;
@@ -74,6 +73,8 @@ namespace Google.Cloud.Datastore.V1.Mapper
             // If no match succeeds and T is a reference type then treat it like an entity
             if (to == null && from == null && !type.GetTypeInfo().IsValueType)
             {
+                //FIXME: should ensure type has a parameterless constructor? It's more prompt feedback,
+                //but initialization errors are sometimes difficult to debug.
                 to = new Func<object, Value>(Convert.Entity<object>).GetMethodInfo()
                     .GetGenericMethodDefinition()
                     .MakeGenericMethod(type);

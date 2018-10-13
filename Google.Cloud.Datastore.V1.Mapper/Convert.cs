@@ -79,7 +79,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
 
         public static T? Nullable<T>(Value v) where T : struct =>
             v.IsNull ? new T?() : Value<T>.From(v);
-        public static Value Array<T>(T? v) where T : struct =>
+        public static Value Nullable<T>(T? v) where T : struct =>
             v == null ? Value.ForNull() : Value<T>.To(v.Value);
 
         public static T[] Array<T>(Value v) =>
