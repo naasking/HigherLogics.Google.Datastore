@@ -188,7 +188,7 @@ namespace MapperTests
         [Fact]
         public static void Errors()
         {
-            Assert.Throws<InvalidOperationException>(() => Value<Assert>.From(new Value()));
+            Assert.Throws<InvalidOperationException>(() => Value<IntPtr>.From(new Value()));
             Assert.Throws<InvalidOperationException>(() => Value<IntPtr>.To(new IntPtr()));
         }
 
@@ -224,5 +224,12 @@ namespace MapperTests
             Assert.Equal(x, Value<IEnumerable<int>>.From(v));
         }
 
+        [Fact]
+        public static void DecimalEnumerable()
+        {
+            var x = new[] { 0M, decimal.MinValue, decimal.MaxValue, 99M };
+            var v = Value<IEnumerable<decimal>>.To(x);
+            Assert.Equal(x, Value<IEnumerable<decimal>>.From(v));
+        }
     }
 }

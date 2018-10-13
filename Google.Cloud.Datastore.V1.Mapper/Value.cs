@@ -74,10 +74,10 @@ namespace Google.Cloud.Datastore.V1.Mapper
             // If no match succeeds and T is a reference type then treat it like an entity
             if (to == null && from == null && !type.GetTypeInfo().IsValueType)
             {
-                to = new Func<Value, object>(Convert.Entity<object>).GetMethodInfo()
+                to = new Func<object, Value>(Convert.Entity<object>).GetMethodInfo()
                     .GetGenericMethodDefinition()
                     .MakeGenericMethod(type);
-                from = new Func<object, Value>(Convert.Entity<object>).GetMethodInfo()
+                from = new Func<Value, object>(Convert.Entity<object>).GetMethodInfo()
                     .GetGenericMethodDefinition()
                     .MakeGenericMethod(type);
             }
