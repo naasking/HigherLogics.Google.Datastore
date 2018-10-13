@@ -234,6 +234,7 @@ namespace MapperTests
             var v = Value<IEnumerable<decimal>>.To(x);
             Assert.Equal(x, Value<IEnumerable<decimal>>.From(v));
         }
+
         [Theory]
         [InlineData(99)]
         [InlineData(null)]
@@ -241,6 +242,20 @@ namespace MapperTests
         {
             var e = Value<int?>.To(i);
             Assert.Equal(i, Value<int?>.From(e));
+        }
+
+        [Fact]
+        public static void NullableDecimal()
+        {
+            NullableDecimalTheory(99M);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        public static void NullableDecimalTheory(decimal? i)
+        {
+            var e = Value<decimal?>.To(i);
+            Assert.Equal(i, Value<decimal?>.From(e));
         }
     }
 }
