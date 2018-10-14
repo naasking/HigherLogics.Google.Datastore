@@ -18,6 +18,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         void Map<T>(out Func<T, Entity, T> from, out Func<Entity, T, Entity> to)
             where T : class;
 
-        //FIXME: may need to add a HashMap<T> as a parameter in order to handle circular references?
+        //FIXME: may need to add a dictionary/hashtable as a parameter to each delegate
+        //in order to handle circular references
     }
 }

@@ -92,8 +92,11 @@ namespace Google.Cloud.Datastore.V1.Mapper
             v.Select(Value<T>.To).ToArray();
 
         public static T Entity<T>(Value v) where T : class =>
-            Google.Cloud.Datastore.V1.Mapper.Entity<T>.From(Activator.CreateInstance<T>(), v.EntityValue);
+            Google.Cloud.Datastore.V1.Mapper.Entity<T>.From(
+                Activator.CreateInstance<T>(), v.EntityValue);
 
+        //FIXME: this entity lacks a Key initializer. Does it need it? May have to add
+        //a KeyFactory mapping function.
         public static Value Entity<T>(T v) where T : class =>
             Google.Cloud.Datastore.V1.Mapper.Entity<T>.To(new Entity(), v);
     }

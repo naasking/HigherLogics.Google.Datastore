@@ -257,5 +257,27 @@ namespace MapperTests
             var e = Value<decimal?>.To(i);
             Assert.Equal(i, Value<decimal?>.From(e));
         }
+
+
+        [Theory]
+        [InlineData(DateTimeKind.Local)]
+        [InlineData(DateTimeKind.Utc)]
+        [InlineData(DateTimeKind.Unspecified)]
+        public static void EnumTests(DateTimeKind i)
+        {
+            var e = Value<DateTimeKind>.To(i);
+            Assert.Equal(i, Value<DateTimeKind>.From(e));
+        }
+
+        [Theory]
+        [InlineData(DateTimeKind.Local)]
+        [InlineData(DateTimeKind.Utc)]
+        [InlineData(DateTimeKind.Unspecified)]
+        [InlineData(null)]
+        public static void NullableEnumTests(DateTimeKind? i)
+        {
+            var e = Value<DateTimeKind?>.To(i);
+            Assert.Equal(i, Value<DateTimeKind?>.From(e));
+        }
     }
 }

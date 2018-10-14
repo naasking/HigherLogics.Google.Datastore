@@ -25,63 +25,22 @@ namespace Google.Cloud.Datastore.V1.Mapper
 
         static Value()
         {
-            //FIXME: need to specially handle: enums, maybe tuples and value tuples?
+            //FUTURE: need to specially handle: maybe tuples and value tuples?
             var type = typeof(T);
+            var tinfo = type.GetTypeInfo();
             var toTypes = new[] { type };
             MethodInfo to, from;
             if (type.IsArray)
-            {
-                // Extract the array element type and then search for a matching conversion in Value.
-                // If none present, then use the generic Convert.Array methods.
-                var elem = type.GetElementType();
-                to = typeof(Value).GetMethod("op_Implicit", toTypes)
-                  ?? new Func<int[], Value>(Convert.Array<int>).GetMethodInfo()
-                        .GetGenericMethodDefinition()
-                        .MakeGenericMethod(elem);
-                from = typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                                    .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal))
-                    ?? new Func<Value, int[]>(Convert.Array<int>).GetMethodInfo()
-                        .GetGenericMethodDefinition()
-                        .MakeGenericMethod(elem);
-            }
+                ArrayMappers(type, toTypes, out to, out from);
             else if (type.IsConstructedGenericType)
-            {
-                // handle some generic types like IEnumerable<T>, IList<T>, etc.
-                var baseType = type.GetGenericTypeDefinition();
-                var baseName = baseType.Name.Remove(baseType.Name.LastIndexOf('`'));
-                var tval = typeof(Value);
-                to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                                    .SingleOrDefault(x => x.Name == baseName && x.ReturnType == tval)
-                                    ?.MakeGenericMethod(type.GetGenericArguments());
-                from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                                      .SingleOrDefault(x => x.Name == baseName && x.ReturnType != tval)
-                                      ?.MakeGenericMethod(type.GetGenericArguments());
-            }
+                GenericMappers(type, toTypes, out to, out from);
             else
-            {
-                // First search for conversions provided as static methods on this class which may override
-                // the default conversions provided by Google's library, then fall back to Google's defaults.
-                // This is because searching for a conversion for Byte will return the conversion for Int64.
-                to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                                    .SingleOrDefault(x => x.Name == type.Name && x.ReturnType == typeof(Value))
-                  ?? typeof(Value).GetMethod("op_Implicit", toTypes);
-                from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                                      .SingleOrDefault(x => x.ReturnType == type)
-                    ?? typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                                    .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal));
-            }
+                PrimitiveMappers(tinfo.IsEnum ? Enum.GetUnderlyingType(type) : type, toTypes, out to, out from);
+
             // If no match succeeds and T is a reference type then treat it like an entity
-            if (to == null && from == null && !type.GetTypeInfo().IsValueType)
-            {
-                //FIXME: should ensure type has a parameterless constructor? It's more prompt feedback,
-                //but initialization errors are sometimes difficult to debug.
-                to = new Func<object, Value>(Convert.Entity<object>).GetMethodInfo()
-                    .GetGenericMethodDefinition()
-                    .MakeGenericMethod(type);
-                from = new Func<Value, object>(Convert.Entity<object>).GetMethodInfo()
-                    .GetGenericMethodDefinition()
-                    .MakeGenericMethod(type);
-            }
+            if (to == null && from == null && !tinfo.IsValueType)
+                EntityMappers(type, toTypes, out to, out from);
+
             if (to != null && from != null)
                 Override((Func<Value, T>)from.CreateDelegate(typeof(Func<Value, T>)),
                          (Func<T, Value>)to.CreateDelegate(typeof(Func<T, Value>)));
@@ -90,6 +49,60 @@ namespace Google.Cloud.Datastore.V1.Mapper
             else
                 Override(v => throw new InvalidOperationException("No value conversion for type " + type.Name),
                          x => throw new InvalidOperationException("No value conversion for type " + type.Name));
+        }
+
+        static void EntityMappers(System.Type type, System.Type[] toTypes, out MethodInfo to, out MethodInfo from)
+        {
+            //FIXME: should ensure type has a parameterless constructor? It's more prompt feedback
+            //to do this at initialization time, but initialization errors can be difficult to debug.
+            to = new Func<object, Value>(Convert.Entity<object>).GetMethodInfo()
+                .GetGenericMethodDefinition()
+                .MakeGenericMethod(type);
+            from = new Func<Value, object>(Convert.Entity<object>).GetMethodInfo()
+                .GetGenericMethodDefinition()
+                .MakeGenericMethod(type);
+        }
+
+        static void PrimitiveMappers(System.Type type, System.Type[] toTypes, out MethodInfo to, out MethodInfo from)
+        {
+            // First search for conversions provided as static methods on this class which may override
+            // the default conversions provided by Google's library, then fall back to Google's defaults.
+            // This is because searching for a conversion for Byte will return the conversion for Int64.
+            to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                                .SingleOrDefault(x => x.Name == type.Name && x.ReturnType == typeof(Value))
+              ?? typeof(Value).GetMethod("op_Implicit", toTypes);
+            from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                                  .SingleOrDefault(x => x.ReturnType == type)
+                ?? typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal));
+        }
+
+        static void ArrayMappers(System.Type type, System.Type[] toTypes, out MethodInfo to, out MethodInfo from)
+        {
+            var elem = type.GetElementType();
+            to = typeof(Value).GetMethod("op_Implicit", toTypes)
+              ?? new Func<int[], Value>(Convert.Array<int>).GetMethodInfo()
+                    .GetGenericMethodDefinition()
+                    .MakeGenericMethod(elem);
+            from = typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal))
+                ?? new Func<Value, int[]>(Convert.Array<int>).GetMethodInfo()
+                    .GetGenericMethodDefinition()
+                    .MakeGenericMethod(elem);
+        }
+
+        static void GenericMappers(System.Type type, System.Type[] toTypes, out MethodInfo to, out MethodInfo from)
+        {
+            // handle some generic types like IEnumerable<T>, IList<T>, etc.
+            var baseType = type.GetGenericTypeDefinition();
+            var baseName = baseType.Name.Remove(baseType.Name.LastIndexOf('`'));
+            var tval = typeof(Value);
+            to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                                .SingleOrDefault(x => x.Name == baseName && x.ReturnType == tval)
+                                ?.MakeGenericMethod(type.GetGenericArguments());
+            from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                                  .SingleOrDefault(x => x.Name == baseName && x.ReturnType != tval)
+                                  ?.MakeGenericMethod(type.GetGenericArguments());
         }
 
         /// <summary>
