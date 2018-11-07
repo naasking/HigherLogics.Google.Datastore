@@ -30,7 +30,7 @@ namespace MapperTests
             var db = Open();
             var x = new Simple { Bar = 92, Baz = "Hello world!" };
             var kf = db.CreateKeyFactory<Simple>();
-            var xkey = db.Insert(x, kf.CreateIncompleteKey());
+            var xkey = db.Insert(x);
             var db2 = Open();
             var y = db2.Lookup(new Simple(), xkey);
             Assert.Equal(x.Bar, y.Bar);
@@ -49,8 +49,7 @@ namespace MapperTests
                 IO = new MemoryStream(Encoding.ASCII.GetBytes("hello world!")),
             };
             var db = Open();
-            var xkf = db.CreateKeyFactory<Complex>();
-            var xkey = db.Insert(x, xkf.CreateIncompleteKey());
+            var xkey = db.Insert(x);
             var y = db.Lookup(new Complex(), xkey);
             Assert.Equal(x.Id, y.Id);
             Assert.Equal(x.Uri, y.Uri);

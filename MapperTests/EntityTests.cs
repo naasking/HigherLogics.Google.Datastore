@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Text;
-using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Xunit;
 using Google.Cloud.Datastore.V1;
 using Google.Cloud.Datastore.V1.Mapper;
@@ -12,7 +12,8 @@ namespace MapperTests
 {
     class Simple
     {
-        public int Bar { get; set; }
+        [Key]
+        public long Bar { get; set; }
         public string Baz { get; set; }
     }
 
@@ -41,10 +42,24 @@ namespace MapperTests
             var y = Entity<Simple>.From(new Simple(), e);
             Assert.Equal(x.Bar, y.Bar);
             Assert.Equal(x.Baz, y.Baz);
-            Assert.Equal(x.Bar, e["Bar"]);
+            Assert.Equal(x.Bar, e.Key.Id());
             Assert.Equal(x.Baz, e["Baz"]);
             Assert.NotEqual(x.Bar, e["Baz"].IntegerValue);
-            Assert.NotEqual(x.Baz, e["Bar"].StringValue);
+            Assert.NotEqual(x.Baz, e.Key.ToString());
+        }
+
+        [Fact]
+        public static void SimpleIncomplete()
+        {
+            var x = new Simple { Baz = "hello world!" };
+            var e = Entity<Simple>.To(new Entity(), x);
+            var y = Entity<Simple>.From(new Simple(), e);
+            Assert.Equal(x.Bar, y.Bar);
+            Assert.Equal(x.Baz, y.Baz);
+            Assert.Equal(x.Bar, e.Key.Id());
+            Assert.Equal(x.Baz, e["Baz"]);
+            Assert.NotEqual(x.Bar, e["Baz"].IntegerValue);
+            Assert.NotEqual(x.Baz, e.Key.ToString());
         }
 
         [Fact]

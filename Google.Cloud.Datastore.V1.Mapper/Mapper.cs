@@ -17,16 +17,65 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         public static IEntityMapper Default { get; set; } = new PropertyMapper();
 
+        #region Key extensions
+        /// <summary>
+        /// Generate a kind for the given type.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <returns>A kind identifier for the entity type <typeparamref name="T"/>.</returns>
+        public static string Kind<T>() where T : class => typeof(T).FullName;
+
         /// <summary>
         /// Create a KeyFactory using the type name.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="db"></param>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <returns>A key factory for entities of type <typeparamref name="T"/>.</returns>
+        public static KeyFactory CreateKeyFactory<T>(this DatastoreDb db) where T: class =>
+            db.CreateKeyFactory(Kind<T>());
+
+        /// <summary>
+        /// Extract the key identifier.
+        /// </summary>
+        /// <param name="key">The entity key.</param>
+        /// <returns>The Int64 identifier for the given key.</returns>
+        public static long Id(this Key key) => key.Path.First().Id;
+
+        /// <summary>
+        /// Convert an Int64 to a Key.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="id">The entity identifier.</param>
+        /// <returns>A key for the given identifier.</returns>
+        public static Key ToKey<T>(this long id) where T : class =>
+            new Key().WithElement(Kind<T>(), id);
+
+        /// <summary>
+        /// Create an incomplete key for a given type.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
         /// <returns></returns>
-        public static KeyFactory CreateKeyFactory<T>(this DatastoreDb db)
+        public static Key CreateIncompleteKey<T>() where T : class =>
+            new Key().WithElement(new Key.Types.PathElement { Kind = Mapper.Kind<T>() });
+        #endregion
+
+        #region Internal key initializers
+        static Key Init<T>(T obj, Key key)
+            where T : class
         {
-            return db.CreateKeyFactory(typeof(T).FullName);
+            Entity<T>.SetKey(obj, key);
+            return key;
         }
+
+        static IReadOnlyList<Key> Init<T>(IEnumerable<T> objs, IReadOnlyList<Key> keys)
+            where T : class
+        {
+            var i = 0;
+            foreach (var obj in objs)
+                Entity<T>.SetKey(obj, keys[i++]);
+            return keys;
+        }
+        #endregion
 
         #region Lookup extensions on entities
         /// <summary>
@@ -35,14 +84,15 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
         /// <param name="key">The key to lookup.</param>
-        /// <param name="entity">The entity to fill with the retrieved data.</param>
+        /// <param name="obj">The entity to fill with the retrieved data.</param>
         /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>The entity with the specified key, or null if no such entity exists.</returns>
-        public static T Lookup<T>(this DatastoreDb db, T entity, Key key, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
+        public static T Lookup<T>(this DatastoreDb db, T obj, Key key, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
-            return Entity<T>.From(entity, db.Lookup(key, readConsistency, callSettings));
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Entity<T>.From(obj, db.Lookup(key, readConsistency, callSettings));
         }
 
         /// <summary>
@@ -51,14 +101,15 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
         /// <param name="key">The key to lookup.</param>
-        /// <param name="entity">The entity to fill with the retrieved data.</param>
+        /// <param name="obj">The entity to fill with the retrieved data.</param>
         /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>The entity with the specified key, or null if no such entity exists.</returns>
-        public static async Task<T> LookupAsync<T>(this DatastoreDb db, T entity, Key key, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
+        public static async Task<T> LookupAsync<T>(this DatastoreDb db, T obj, Key key, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
-            return Entity<T>.From(entity, await db.LookupAsync(key, readConsistency, callSettings));
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Entity<T>.From(obj, await db.LookupAsync(key, readConsistency, callSettings));
         }
 
         /// <summary>
@@ -78,6 +129,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (create == null) throw new ArgumentNullException(nameof(create));
+            if (keys == null) throw new ArgumentNullException(nameof(keys));
             return db.Lookup(keys, readConsistency, callSettings)
                      .Select(e => e == null ? default(T) : Entity<T>.From(create(), e))
                      .ToList();
@@ -117,6 +169,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (create == null) throw new ArgumentNullException(nameof(create));
+            if (keys == null) throw new ArgumentNullException(nameof(keys));
             var entities = await db.LookupAsync(keys, readConsistency, callSettings);
             return entities.Select(e => e == null ? default(T) : Entity<T>.From(create(), e))
                            .ToList();
@@ -146,17 +199,17 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
-        /// <param name="entity">The entity to insert. Must not be null.</param>
+        /// <param name="obj">The entity to insert. Must not be null.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>
         /// The key of the inserted entity if it was allocated by the server, or null
         /// if the inserted entity had a predefined key.
         /// </returns>
-        public static Key Insert<T>(this DatastoreDb db, T entity, Key key, CallSettings callSettings = null)
+        public static Key Insert<T>(this DatastoreDb db, T obj, CallSettings callSettings = null)
             where T : class
         {
-            var e = new Entity { Key = key };
-            return db.Insert(Entity<T>.To(e, entity), callSettings);
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Init(obj, db.Insert(Entity<T>.To(new Entity(), obj), callSettings));
         }
 
         /// <summary>
@@ -164,17 +217,17 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
-        /// <param name="entity">The entity to insert. Must not be null.</param>
+        /// <param name="obj">The entity to insert. Must not be null.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>
         /// The key of the inserted entity if it was allocated by the server, or null
         /// if the inserted entity had a predefined key.
         /// </returns>
-        public static Task<Key> InsertAsync<T>(this DatastoreDb db, T entity, Key key, CallSettings callSettings = null)
+        public static async Task<Key> InsertAsync<T>(this DatastoreDb db, T obj, CallSettings callSettings = null)
             where T : class
         {
-            var e = new Entity { Key = key };
-            return db.InsertAsync(Entity<T>.To(e, entity), callSettings);
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Init(obj, await db.InsertAsync(Entity<T>.To(new Entity(), obj), callSettings));
         }
 
         /// <summary>
@@ -182,21 +235,18 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
-        /// <param name="entities">The entities to insert. Must not be null or contain null entries.</param>
+        /// <param name="objs">The entities to insert. Must not be null or contain null entries.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>
         /// A collection of keys of inserted entities, in the same order as entities. Only
         /// keys allocated by the server will be returned; any entity with a predefined key
         /// will have a null value in the collection.
         ///</returns>
-        public static IReadOnlyList<Key> Insert<T>(this DatastoreDb db, IEnumerable<T> entities, Func<T, Key> getKey, CallSettings callSettings = null)
+        public static IReadOnlyList<Key> Insert<T>(this DatastoreDb db, IEnumerable<T> objs, CallSettings callSettings = null)
             where T : class
         {
-            if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.Insert(entities.Select(x => Entity<T>.To(new Entity
-            {
-                Key = getKey(x),
-            }, x)), callSettings);
+            if (objs == null) throw new ArgumentNullException(nameof(objs));
+            return Init(objs, db.Insert(objs.Select(x => Entity<T>.To(new Entity(), x)), callSettings));
         }
 
         /// <summary>
@@ -204,7 +254,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
-        /// <param name="entities">The entities to insert. Must not be null or contain null entries.</param>
+        /// <param name="objs">The entities to insert. Must not be null or contain null entries.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>
         /// A task representing the asynchronous operation. The result of the task is a collection
@@ -212,14 +262,11 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// by the server will be returned; any entity with a predefined key will have a
         /// null value in the collection.
         ///</returns>
-        public static Task<IReadOnlyList<Key>> InsertAsync<T>(this DatastoreDb db, IEnumerable<T> entities, Func<T, Key> getKey, CallSettings callSettings = null)
+        public static async Task<IReadOnlyList<Key>> InsertAsync<T>(this DatastoreDb db, IEnumerable<T> objs, CallSettings callSettings = null)
             where T : class
         {
-            if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.InsertAsync(entities.Select(x => Entity<T>.To(new Entity
-            {
-                Key = getKey(x)
-            }, x)), callSettings);
+            if (objs == null) throw new ArgumentNullException(nameof(objs));
+            return Init(objs, await db.InsertAsync(objs.Select(x => Entity<T>.To(new Entity(), x)), callSettings));
         }
 
         /// <summary>
@@ -233,11 +280,8 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// keys allocated by the server will be returned; any entity with a predefined key
         /// will have a null value in the collection.
         ///</returns>
-        public static IReadOnlyList<Key> Insert<T>(this DatastoreDb db, Func<T, Key> getKey, params T[] entities)
-            where T : class
-        {
-            return db.Insert<T>(entities, getKey, null);
-        }
+        public static IReadOnlyList<Key> Insert<T>(this DatastoreDb db, params T[] entities) where T : class =>
+            db.Insert<T>(entities, null);
 
         /// <summary>
         /// Inserts a collection of entities, non-transactionally asn asynchronously.
@@ -251,41 +295,11 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// by the server will be returned; any entity with a predefined key will have a
         /// null value in the collection.
         ///</returns>
-        public static Task<IReadOnlyList<Key>> InsertAsync<T>(this DatastoreDb db, Func<T, Key> getKey, params T[] entities)
-            where T : class
-        {
-            return db.InsertAsync<T>(entities, getKey, null);
-        }
+        public static Task<IReadOnlyList<Key>> InsertAsync<T>(this DatastoreDb db, params T[] entities) where T : class =>
+            db.InsertAsync<T>(entities, null);
         #endregion
 
         #region Delete extensions on entities
-        /// <summary>
-        /// Deletes a single entity, non-transactionally.
-        /// </summary>
-        /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
-        /// <param name="entity">The entity to delete. Must not be null.</param>
-        /// <param name="callSettings">If not null, applies overrides to RPC calls.</param>
-        public static void Delete<T>(this DatastoreDb db, T entity, CallSettings callSettings = null)
-            where T : class
-        {
-            db.Delete(Entity<T>.To(new Entity(), entity), callSettings);
-        }
-
-        /// <summary>
-        /// Deletes a single entity, non-transactionally and asynchronously.
-        /// </summary>
-        /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
-        /// <param name="entity">The entity to delete. Must not be null.</param>
-        /// <param name="callSettings">If not null, applies overrides to RPC calls.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        public static Task DeleteAsync<T>(this DatastoreDb db, T entity, CallSettings callSettings = null)
-            where T : class
-        {
-            return db.DeleteAsync(Entity<T>.To(new Entity(), entity), callSettings);
-        }
-
         /// <summary>
         /// Deletes a collection of keys, non-transactionally.
         /// </summary>
@@ -297,7 +311,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            db.Delete(entities.Select(x => Entity<T>.To(new Entity(), x)), callSettings);
+            db.Delete(entities.Select(Entity<T>.GetKey), callSettings);
         }
 
         /// <summary>
@@ -312,7 +326,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.DeleteAsync(entities.Select(x => Entity<T>.To(new Entity(), x)), callSettings);
+            return db.DeleteAsync(entities.Select(Entity<T>.GetKey), callSettings);
         }
 
         /// <summary>
@@ -324,7 +338,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static void Delete<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            db.Delete<T>(entities, null);
+            db.Delete(entities, null);
         }
 
         /// <summary>
@@ -337,7 +351,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Task DeleteAsync<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            return db.DeleteAsync<T>(entities, null);
+            return db.DeleteAsync(entities, null);
         }
         #endregion
 
@@ -347,13 +361,13 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
-        /// <param name="entity">The entity to update. Must not be null.</param>
+        /// <param name="obj">The entity to update. Must not be null.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
-        public static void Update<T>(this DatastoreDb db, T entity, Key key, CallSettings callSettings = null)
+        public static void Update<T>(this DatastoreDb db, T obj, CallSettings callSettings = null)
             where T : class
         {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
-            db.Update(Entity<T>.To(new Entity { Key = key }, entity), callSettings);
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            db.Update(Entity<T>.To(new Entity(), obj), callSettings);
         }
 
         /// <summary>
@@ -361,13 +375,13 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
-        /// <param name="entity">The entity to update. Must not be null.</param>
+        /// <param name="obj">The entity to update. Must not be null.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
-        public static Task UpdateAsync<T>(this DatastoreDb db, T entity, Key key, CallSettings callSettings = null)
+        public static Task UpdateAsync<T>(this DatastoreDb db, T obj, CallSettings callSettings = null)
             where T : class
         {
-            if (entity == null) throw new ArgumentNullException(nameof(entity));
-            return db.UpdateAsync(Entity<T>.To(new Entity { Key = key }, entity), callSettings);
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return db.UpdateAsync(Entity<T>.To(new Entity(), obj), callSettings);
         }
 
         /// <summary>
@@ -377,14 +391,14 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <param name="entities">The entities to update. Must not be null or contain null entries.</param>
         /// <param name="db">The datastore instance.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
-        public static void Update<T>(this DatastoreDb db, IEnumerable<T> entities, Func<T, Key> getKey, CallSettings callSettings = null)
+        public static void Update<T>(this DatastoreDb db, IEnumerable<T> entities, CallSettings callSettings = null)
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
             db.Update(entities.Select(x =>
             {
                 if (x == null) throw new ArgumentNullException(nameof(x));
-                return Entity<T>.To(new Entity { Key = getKey(x) }, x);
+                return Entity<T>.To(new Entity(), x);
             }), callSettings);
         }
 
@@ -396,14 +410,14 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <param name="db">The datastore instance.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public static Task UpdateAsync<T>(this DatastoreDb db, IEnumerable<T> entities, Func<T, Key> getKey, CallSettings callSettings = null)
+        public static Task UpdateAsync<T>(this DatastoreDb db, IEnumerable<T> entities, CallSettings callSettings = null)
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
             return db.UpdateAsync(entities.Select(x =>
             {
                 if (x == null) throw new ArgumentNullException(nameof(x));
-                return Entity<T>.To(new Entity { Key = getKey(x) }, x);
+                return Entity<T>.To(new Entity(), x);
             }), callSettings);
         }
 
@@ -414,10 +428,10 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <param name="entities">The entities to update. Must not be null or contain null entries.</param>
         /// <param name="db">The datastore instance.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public static void Update<T>(this DatastoreDb db, Func<T, Key> getKey, params T[] entities)
+        public static void Update<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            db.Update<T>(entities, getKey, null);
+            db.Update<T>(entities, null);
         }
 
         /// <summary>
@@ -427,10 +441,10 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <param name="entities">The entities to update. Must not be null or contain null entries.</param>
         /// <param name="db">The datastore instance.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public static Task UpdateAsync<T>(this DatastoreDb db, Func<T, Key> getKey, params T[] entities)
+        public static Task UpdateAsync<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            return db.UpdateAsync<T>(entities, getKey, null);
+            return db.UpdateAsync<T>(entities, null);
         }
         #endregion
 
@@ -440,14 +454,15 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
-        /// <param name="entity">The entity to upsert. Must not be null.</param>
+        /// <param name="obj">The entity to upsert. Must not be null.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>null if the entity was updated or was inserted with a predefined key, or the 
         /// new key if the entity was inserted and the mutation allocated the key.</returns>
-        public static Key Upsert<T>(this DatastoreDb db, T entity, Key key, CallSettings callSettings = null)
+        public static Key Upsert<T>(this DatastoreDb db, T obj, CallSettings callSettings = null)
             where T : class
         {
-            return db.Upsert(Entity<T>.To(new Entity { Key = key }, entity), callSettings);
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Init(obj, db.Upsert(Entity<T>.To(new Entity(), obj), callSettings));
         }
 
         /// <summary>
@@ -455,14 +470,53 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
-        /// <param name="entity">The entity to upsert. Must not be null.</param>
+        /// <param name="obj">The entity to upsert. Must not be null.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>null if the entity was updated or was inserted with a predefined key, or the 
         /// new key if the entity was inserted and the mutation allocated the key.</returns>
-        public static Task<Key> UpsertAsync<T>(this DatastoreDb db, T entity, Key key, CallSettings callSettings = null)
+        public static async Task<Key> UpsertAsync<T>(this DatastoreDb db, T obj, CallSettings callSettings = null)
             where T : class
         {
-            return db.UpsertAsync(Entity<T>.To(new Entity { Key = key }, entity), callSettings);
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Init(obj, await db.UpsertAsync(Entity<T>.To(new Entity(), obj), callSettings));
+        }
+
+        /// <summary>
+        /// Upserts a collection of entities, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="objs">The entities to upsert. Must not be null or contain null entries.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
+        /// entity which had an incomplete key - requiring the server to allocate a new key
+        /// - will have a non-null value in the collection, equal to the new key for the
+        /// entity. Each updated entity or inserted entity with a predefined key will have
+        /// a null value in the collection.</returns>
+        public static IReadOnlyList<Key> Upsert<T>(this DatastoreDb db, IEnumerable<T> objs, CallSettings callSettings = null)
+            where T : class
+        {
+            if (objs == null) throw new ArgumentNullException(nameof(objs));
+            return Init(objs, db.Upsert(objs.Select(x => Entity<T>.To(new Entity(), x)), callSettings));
+        }
+
+        /// <summary>
+        /// Upserts a collection of entities, non-transactionally and asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="objs">The entities to upsert. Must not be null or contain null entries.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
+        /// entity which had an incomplete key - requiring the server to allocate a new key
+        /// - will have a non-null value in the collection, equal to the new key for the
+        /// entity. Each updated entity or inserted entity with a predefined key will have
+        /// a null value in the collection.</returns>
+        public static async Task<IReadOnlyList<Key>> UpsertAsync<T>(this DatastoreDb db, IEnumerable<T> objs, CallSettings callSettings = null)
+            where T : class
+        {
+            if (objs == null) throw new ArgumentNullException(nameof(objs));
+            return Init(objs, await db.UpsertAsync(objs.Select(x => Entity<T>.To(new Entity(), x)), callSettings));
         }
 
         /// <summary>
@@ -471,59 +525,15 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
         /// <param name="entities">The entities to upsert. Must not be null or contain null entries.</param>
-        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
         /// entity which had an incomplete key - requiring the server to allocate a new key
         /// - will have a non-null value in the collection, equal to the new key for the
         /// entity. Each updated entity or inserted entity with a predefined key will have
         /// a null value in the collection.</returns>
-        public static IReadOnlyList<Key> Upsert<T>(this DatastoreDb db, IEnumerable<T> entities, Func<T, Key> getKey, CallSettings callSettings = null)
+        public static IReadOnlyList<Key> Upsert<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.Upsert(entities.Select(x => Entity<T>.To(new Entity
-            {
-                Key = getKey(x),
-            }, x)), callSettings);
-        }
-
-        /// <summary>
-        /// Upserts a collection of entities, non-transactionally and asynchronously.
-        /// </summary>
-        /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
-        /// <param name="entities">The entities to upsert. Must not be null or contain null entries.</param>
-        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
-        /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
-        /// entity which had an incomplete key - requiring the server to allocate a new key
-        /// - will have a non-null value in the collection, equal to the new key for the
-        /// entity. Each updated entity or inserted entity with a predefined key will have
-        /// a null value in the collection.</returns>
-        public static Task<IReadOnlyList<Key>> UpsertAsync<T>(this DatastoreDb db, IEnumerable<T> entities, Func<T, Key> getKey, CallSettings callSettings = null)
-            where T : class
-        {
-            if (entities == null) throw new ArgumentNullException(nameof(entities));
-            return db.UpsertAsync(entities.Select(x => Entity<T>.To(new Entity
-            {
-                Key = getKey(x)
-            }, x)), callSettings);
-        }
-
-        /// <summary>
-        /// Upserts a collection of entities, non-transactionally.
-        /// </summary>
-        /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
-        /// <param name="entities">The entities to upsert. Must not be null or contain null entries.</param>
-        /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
-        /// entity which had an incomplete key - requiring the server to allocate a new key
-        /// - will have a non-null value in the collection, equal to the new key for the
-        /// entity. Each updated entity or inserted entity with a predefined key will have
-        /// a null value in the collection.</returns>
-        public static IReadOnlyList<Key> Upsert<T>(this DatastoreDb db, Func<T, Key> getKey, params T[] entities)
-            where T : class
-        {
-            return db.Upsert<T>(entities, getKey, null);
+            return db.Upsert<T>(entities, null);
         }
 
         /// <summary>
@@ -537,10 +547,10 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// - will have a non-null value in the collection, equal to the new key for the
         /// entity. Each updated entity or inserted entity with a predefined key will have
         /// a null value in the collection.</returns>
-        public static Task<IReadOnlyList<Key>> UpsertAsync<T>(this DatastoreDb db, Func<T, Key> getKey, params T[] entities)
+        public static Task<IReadOnlyList<Key>> UpsertAsync<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            return db.UpsertAsync<T>(entities, getKey, null);
+            return db.UpsertAsync<T>(entities, null);
         }
         #endregion
 

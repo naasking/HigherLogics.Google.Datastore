@@ -25,11 +25,13 @@ namespace Google.Cloud.Datastore.V1.Mapper
 
         static Value()
         {
-            //FUTURE: need to specially handle: maybe tuples and value tuples?
+            //FUTURE: maybe specially tuples and value tuples?
             var type = typeof(T);
             var tinfo = type.GetTypeInfo();
             var toTypes = new[] { type };
             MethodInfo to, from;
+            //FIXME: what to do about an array of entities? Perhaps check element type first,
+            //and only map if element type itself has a value mapping. If not, raise an error.
             if (type.IsArray)
                 ArrayMappers(type, toTypes, out to, out from);
             else if (type.IsConstructedGenericType)
@@ -55,10 +57,10 @@ namespace Google.Cloud.Datastore.V1.Mapper
         {
             //FIXME: should ensure type has a parameterless constructor? It's more prompt feedback
             //to do this at initialization time, but initialization errors can be difficult to debug.
-            to = new Func<object, Value>(Convert.Entity<object>).GetMethodInfo()
+            to = new Func<object, Value>(Convert.EntityValue<object>).GetMethodInfo()
                 .GetGenericMethodDefinition()
                 .MakeGenericMethod(type);
-            from = new Func<Value, object>(Convert.Entity<object>).GetMethodInfo()
+            from = new Func<Value, object>(Convert.EntityValue<object>).GetMethodInfo()
                 .GetGenericMethodDefinition()
                 .MakeGenericMethod(type);
         }

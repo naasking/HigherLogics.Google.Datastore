@@ -15,8 +15,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <typeparam name="T"></typeparam>
         /// <param name="from"></param>
         /// <param name="to"></param>
-        void Map<T>(out Func<T, Entity, T> from, out Func<Entity, T, Entity> to)
-            where T : class;
+        void Map<T>(string prefix, out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> from, out Func<Entity, T, Entity> to);
 
         //FIXME: may need to add a dictionary/hashtable as a parameter to each delegate
         //in order to handle circular references

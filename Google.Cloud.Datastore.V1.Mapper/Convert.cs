@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace Google.Cloud.Datastore.V1.Mapper
 {
     /// <summary>
-    /// Conversions for standard CLR types.
+    /// Conversions between standard CLR types and Google datastore types.
     /// </summary>
     static class Convert
     {
@@ -58,7 +58,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
 
         public static TimeSpan TimeSpan(Value x) => new TimeSpan(x.IntegerValue);
         public static Value TimeSpan(TimeSpan x) => x.Ticks;
-        
+
         public static Guid Guid(Value x) => new System.Guid(x.BlobValue.ToByteArray());
         public static Value Guid(Guid x) => x.ToByteArray();
 
@@ -91,13 +91,12 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Value IEnumerable<T>(IEnumerable<T> v) =>
             v.Select(Value<T>.To).ToArray();
 
-        public static T Entity<T>(Value v) where T : class =>
-            Google.Cloud.Datastore.V1.Mapper.Entity<T>.From(
-                Activator.CreateInstance<T>(), v.EntityValue);
+        public static T EntityValue<T>(Value v) where T : class =>
+            Entity<T>.From(Entity<T>.Create(), v.EntityValue);
 
         //FIXME: this entity lacks a Key initializer. Does it need it? May have to add
         //a KeyFactory mapping function.
-        public static Value Entity<T>(T v) where T : class =>
-            Google.Cloud.Datastore.V1.Mapper.Entity<T>.To(new Entity(), v);
+        public static Value EntityValue<T>(T v) where T : class =>
+            Entity<T>.To(new Entity(), v);
     }
 }
