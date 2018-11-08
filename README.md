@@ -1,10 +1,10 @@
-# Google.Datastore.Entities
+# Google.Cloud.Datastore.V1.Mapper
 
 A convention-based Google Datastore entities to POCO auto mapper:
 
     public class Foo
     {
-		[Key]
+        [Key]
         public long Baz { get; set; }
         public string Bar { get; set; }
     }
