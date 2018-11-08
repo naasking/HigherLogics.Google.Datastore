@@ -29,6 +29,8 @@ namespace MapperTests
 
     class Enumerable
     {
+        [Key]
+        public long Id { get; set; }
         public int[] Ints { get; set; }
         public char[] Chars { get; set; }
         public IEnumerable<float> Floats { get; set; }
