@@ -22,6 +22,7 @@
     <Compile Remove="EntityStore.cs" />
     <Compile Remove="KeyMapper - Copy.cs" />
     <Compile Remove="KeyMapper.cs" />
+    <Compile Remove="Query.cs" />
   </ItemGroup>
 
   <ItemGroup>
