@@ -1,15 +1,23 @@
-# Google.Cloud.Datastore.V1.Mapper
+# Google.Datastore.Entities
 
 A convention-based Google Datastore entities to POCO auto mapper:
 
     public class Foo
     {
-        public int Baz { get; set; }
+		[Key]
+        public long Baz { get; set; }
         public string Bar { get; set; }
     }
     ...
     var db = new Google.Cloud.Datastore.V1.DatastoreDb("MyProject");
-	var fooKeys = db.CreateKeyFactory<Foo>();
-	var fooId = db.Insert(new Foo { Baz = 99, Bar = "Hello World!" }, fooKeys.CreateIncompleteKey());
+	var fooId = db.Insert(new Foo { Bar = "Hello World!" });
 	var foo = db.Lookup(new Foo(), fooId);
-    // returns: { Baz : 99, Bar : "hello world!" }
+    // returns: { Baz : <some long id>, Bar : "hello world!" }
+
+It uses the standard attributes in the `System.ComponentModel.DataAnnotations`
+namespace to designate the entity keys.
+
+# Future Work
+
+ * only Sytem.Int64 keys are currently supported.
+ * preliminary support for value types that are inlined into entities needs completing
