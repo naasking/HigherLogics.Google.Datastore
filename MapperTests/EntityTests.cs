@@ -19,6 +19,8 @@ namespace MapperTests
 
     class Complex
     {
+        [Key]
+        public long ComplexId { get; set; }
         public Guid Id { get; set; }
         public Uri Uri { get; set; }
         public decimal Amount { get; set; }
@@ -51,7 +53,7 @@ namespace MapperTests
         [Fact]
         public static void SimpleIncomplete()
         {
-            var x = new Simple { Baz = "hello world!" };
+            var x = new Simple { Bar = 99, Baz = "hello world!" };
             var e = Entity<Simple>.To(new Entity(), x);
             var y = Entity<Simple>.From(new Simple(), e);
             Assert.Equal(x.Bar, y.Bar);

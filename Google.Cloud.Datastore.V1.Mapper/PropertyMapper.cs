@@ -89,7 +89,8 @@ namespace Google.Cloud.Datastore.V1.Mapper
                         .Invoke(null, new object[] { prefix + member.Name, member.GetGetMethod().CreateDelegate(tget) }));
                 }
             }
-            //if (gk == null || sk )
+            if (gk == null || sk == null)
+                throw new MissingMemberException($"{objType.FullName} is missing a property with a [Key] attribute.");
             From = (obj, e) =>
             {
                 if (obj == null) throw new ArgumentNullException("entity");

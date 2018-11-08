@@ -28,11 +28,11 @@ namespace MapperTests
         public static void Simple()
         {
             var db = Open();
-            var x = new Simple { Bar = 92, Baz = "Hello world!" };
-            var kf = db.CreateKeyFactory<Simple>();
+            var x = new Simple { Baz = "Hello world!" };
             var xkey = db.Insert(x);
             var db2 = Open();
             var y = db2.Lookup(new Simple(), xkey);
+            Assert.Equal(x.Bar, xkey.Id());
             Assert.Equal(x.Bar, y.Bar);
             Assert.Equal(x.Baz, y.Baz);
         }
