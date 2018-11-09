@@ -11,17 +11,9 @@ namespace Google.Cloud.Datastore.V1.Mapper
     /// Map entities to/from values.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public static class Entity<T>
+    static class Entity<T>
         where T : class
     {
-        //FIXME: support value types by inlining the properties into the containing
-        //entity. This requires passing around a string prefix, indicating the entity
-        //value' property name which is concatenated with the value type's property names.
-        //Could probably add the string prefix to the IEntityMapper interface and then
-        //any value type fields would simply invoke the mapper directly, passing in the 
-        //current prefix. This generates all the prefixes only once at load time instead of
-        //generating them on the fly at runtime.
-
         /// <summary>
         /// Update an object with the given entity data.
         /// </summary>
@@ -55,6 +47,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
 
         static Entity()
         {
+            // the string prefix is to recursively handle value types as inlined properties
             Mapper.Default.Map<T>("", out var gk, out var sk, out var from, out var to);
             GetKey = gk;
             SetKey = sk;

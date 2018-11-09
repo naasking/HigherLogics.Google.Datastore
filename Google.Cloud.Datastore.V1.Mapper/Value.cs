@@ -3,25 +3,27 @@ using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using W = Google.Protobuf.WellKnownTypes;
 
+[assembly: InternalsVisibleTo("MapperTests")]
 namespace Google.Cloud.Datastore.V1.Mapper
 {
     /// <summary>
     /// Convert serialized values into CLR values.
     /// </summary>
     /// <typeparam name="T">The type of value.</typeparam>
-    public static class Value<T>
+    static class Value<T>
     {
         /// <summary>
         /// Convert a <see cref="Value"/> to type <typeparamref name="T"/>.
         /// </summary>
-        public static Func<Value, T> From { get; private set; }
+        public static Func<Value, T> From { get; set; }
 
         /// <summary>
         /// Convert a <typeparamref name="T"/> to a <see cref="Value"/>.
         /// </summary>
-        public static Func<T, Value> To { get; private set; }
+        public static Func<T, Value> To { get; set; }
 
         static Value()
         {
@@ -44,13 +46,13 @@ namespace Google.Cloud.Datastore.V1.Mapper
                 EntityMappers(type, toTypes, out to, out from);
 
             if (to != null && from != null)
-                Override((Func<Value, T>)from.CreateDelegate(typeof(Func<Value, T>)),
-                         (Func<T, Value>)to.CreateDelegate(typeof(Func<T, Value>)));
+                Mapper.Override((Func<Value, T>)from.CreateDelegate(typeof(Func<Value, T>)),
+                                (Func<T, Value>)to.CreateDelegate(typeof(Func<T, Value>)));
             else if (to != null || from != null)
                 throw new Exception("Type " + type.Name + " has only one conversion but needs both.");
             else
-                Override(v => throw new InvalidOperationException("No value conversion for type " + type.Name),
-                         x => throw new InvalidOperationException("No value conversion for type " + type.Name));
+                Mapper.Override<T>(v => throw new InvalidOperationException("No value conversion for type " + type.Name),
+                                   x => throw new InvalidOperationException("No value conversion for type " + type.Name));
         }
 
         static void EntityMappers(System.Type type, System.Type[] toTypes, out MethodInfo to, out MethodInfo from)
@@ -105,17 +107,6 @@ namespace Google.Cloud.Datastore.V1.Mapper
             from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
                                   .SingleOrDefault(x => x.Name == baseName && x.ReturnType != tval)
                                   ?.MakeGenericMethod(type.GetGenericArguments());
-        }
-
-        /// <summary>
-        /// Override the value conversions to/from Protobuf's <see cref="Value"/> type.
-        /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        public static void Override(Func<Value, T> from, Func<T, Value> to)
-        {
-            From = from ?? throw new ArgumentNullException(nameof(from));
-            To = to ?? throw new ArgumentNullException(nameof(to));
         }
     }
 }

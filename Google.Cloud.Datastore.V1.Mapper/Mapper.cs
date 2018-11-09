@@ -17,6 +17,28 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         public static IEntityMapper Default { get; set; } = new PropertyMapper();
 
+        /// <summary>
+        /// Let user declare a constructor.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="create">The constructor that will be used to initialize new entities of type <typeparamref name="T"/>.</param>
+        public static void Constructor<T>(Func<T> create)
+            where T : class
+        {
+            Entity<T>.Constructor = create;
+        }
+
+        /// <summary>
+        /// Override the value conversions to/from Protobuf's <see cref="Value"/> type.
+        /// </summary>
+        /// <param name="from">The function mapping <see cref="Value"/> to <typeparamref name="T"/>.</param>
+        /// <param name="to">The function mapping <typeparamref name="T"/> to <see cref="Value"/>.</param>
+        public static void Override<T>(Func<Value, T> from, Func<T, Value> to)
+        {
+            Value<T>.From = from ?? throw new ArgumentNullException(nameof(from));
+            Value<T>.To = to ?? throw new ArgumentNullException(nameof(to));
+        }
+
         #region Key extensions
         /// <summary>
         /// Generate a kind for the given type.
