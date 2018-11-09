@@ -33,8 +33,6 @@ namespace HigherLogics.Google.Datastore
             var tinfo = type.GetTypeInfo();
             var toTypes = new[] { type };
             MethodInfo to, from;
-            //FIXME: what to do about an array of entities? Perhaps check element type first,
-            //and only map if element type itself has a value mapping. If not, raise an error.
             if (type.IsArray)
                 ArrayMappers(type, toTypes, out to, out from);
             else if (type.IsConstructedGenericType)
@@ -53,7 +51,7 @@ namespace HigherLogics.Google.Datastore
                 throw new Exception("Type " + type.Name + " has only one conversion but needs both.");
             else
                 Mapper.Convert<T>(v => throw new InvalidOperationException("No value conversion for type " + type.Name),
-                                   x => throw new InvalidOperationException("No value conversion for type " + type.Name));
+                                  x => throw new InvalidOperationException("No value conversion for type " + type.Name));
         }
 
         static void EntityMappers(System.Type type, System.Type[] toTypes, out MethodInfo to, out MethodInfo from)
@@ -73,10 +71,10 @@ namespace HigherLogics.Google.Datastore
             // First search for conversions provided as static methods on this class which may override
             // the default conversions provided by Google's library, then fall back to Google's defaults.
             // This is because searching for a conversion for Byte will return the conversion for Int64.
-            to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+            to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                 .SingleOrDefault(x => x.Name == type.Name && x.ReturnType == typeof(Value))
               ?? typeof(Value).GetMethod("op_Implicit", toTypes);
-            from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+            from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                   .SingleOrDefault(x => x.ReturnType == type)
                 ?? typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                 .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal));
@@ -102,10 +100,10 @@ namespace HigherLogics.Google.Datastore
             var baseType = type.GetGenericTypeDefinition();
             var baseName = baseType.Name.Remove(baseType.Name.LastIndexOf('`'));
             var tval = typeof(Value);
-            to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+            to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                 .SingleOrDefault(x => x.Name == baseName && x.ReturnType == tval)
                                 ?.MakeGenericMethod(type.GetGenericArguments());
-            from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+            from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                   .SingleOrDefault(x => x.Name == baseName && x.ReturnType != tval)
                                   ?.MakeGenericMethod(type.GetGenericArguments());
         }
