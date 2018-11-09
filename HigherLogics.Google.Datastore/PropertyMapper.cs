@@ -98,8 +98,8 @@ namespace HigherLogics.Google.Datastore
                 if (e == null) return obj;
                 //FIXME: should require non-null keys? Probably not since this will be extended for structs.
                 sk?.Invoke(obj, e.Key);
-                foreach (var x in from)
-                    x(e, obj);
+                for (int i = 0; i < from.Count; ++i)
+                    from[i](e, obj);
                 return obj;
             };
             To = (e, obj) =>
@@ -108,8 +108,8 @@ namespace HigherLogics.Google.Datastore
                 if (obj == null) return e;
                 //FIXME: should require non-null keys? Probably not since this will be extended for structs.
                 e.Key = gk?.Invoke(obj);// ?? Mapper.CreateIncompleteKey<T>();
-                foreach (var x in to)
-                    x(obj, e);
+                for (int i = 0; i < to.Count; ++i)
+                    to[i](obj, e);
                 return e;
             };
             return () => Activator.CreateInstance<T>();
