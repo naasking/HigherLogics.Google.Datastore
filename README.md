@@ -54,4 +54,8 @@ assembly.
 # Future Work
 
  * only Sytem.Int64 keys are currently supported.
- * preliminary support for value types that are inlined into entities needs completing
+ * preliminary support for value types that are inlined into entities needs
+   completing
+ * add something like [EntityField(string name)] to permit customizing the
+   entity field names, which will make it easier to integrate with existing
+   systems
