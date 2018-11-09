@@ -4,10 +4,11 @@ using System.IO;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Google.Cloud.Datastore.V1;
 using W = Google.Protobuf.WellKnownTypes;
 
 [assembly: InternalsVisibleTo("MapperTests")]
-namespace Google.Cloud.Datastore.V1.Mapper
+namespace HigherLogics.Google.Datastore
 {
     /// <summary>
     /// Convert serialized values into CLR values.

@@ -7,23 +7,21 @@
     <Description>A simple entity auto-mapper.</Description>
     <Copyright>Sandro Magi 2018</Copyright>
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/naasking/Google.Cloud.Datastore.V1.Mapper</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/naasking/Google.Cloud.Datastore.V1.Mapper</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/naasking/HigherLogics.Google.Datastore</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/naasking/HigherLogics.Google.Datastore</RepositoryUrl>
     <PackageReleaseNotes>Initial release supporting simple convention-based property mappings.</PackageReleaseNotes>
+    <AssemblyName>HigherLogics.Google.Datastore</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard1.5\Google.Cloud.Datastore.V1.Mapper.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard1.5\HigherLogics.Google.Datastore.xml</DocumentationFile>
     <WarningLevel>3</WarningLevel>
     <WarningsAsErrors>NU1605;1591</WarningsAsErrors>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="EntityStore.cs" />
-    <Compile Remove="KeyMapper - Copy.cs" />
-    <Compile Remove="KeyMapper.cs" />
-    <Compile Remove="Query.cs" />
-  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="google.cloud.datastore.v1" Version="2.1.0" />

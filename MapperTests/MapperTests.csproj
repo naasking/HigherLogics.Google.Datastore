@@ -138,13 +138,13 @@
     <Analyzer Include="..\packages\xunit.analyzers.0.7.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Google.Cloud.Datastore.V1.Mapper\Google.Cloud.Datastore.V1.Mapper.csproj">
-      <Project>{5880f1e2-e00d-44b6-9fba-7ba3af7f9e95}</Project>
-      <Name>Google.Cloud.Datastore.V1.Mapper</Name>
-    </ProjectReference>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+    <ProjectReference Include="..\HigherLogics.Google.Datastore\HigherLogics.Google.Datastore.csproj">
+      <Project>{932f9cf4-58e9-499c-a30d-e3470145addc}</Project>
+      <Name>HigherLogics.Google.Datastore</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Api.Gax.Grpc;
+using Google.Cloud.Datastore.V1;
 
-namespace Google.Cloud.Datastore.V1.Mapper
+namespace HigherLogics.Google.Datastore
 {
     /// <summary>
     /// The configuration options

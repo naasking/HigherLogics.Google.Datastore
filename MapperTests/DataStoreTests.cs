@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Google.Cloud.Datastore.V1;
 using Grpc.Core;
 using Xunit;
-using Google.Cloud.Datastore.V1.Mapper;
+using HigherLogics.Google.Datastore;
 
 namespace MapperTests
 {

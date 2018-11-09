@@ -6,7 +6,7 @@ using System.Text;
 using System.ComponentModel.DataAnnotations;
 using Xunit;
 using Google.Cloud.Datastore.V1;
-using Google.Cloud.Datastore.V1.Mapper;
+using HigherLogics.Google.Datastore;
 
 namespace MapperTests
 {

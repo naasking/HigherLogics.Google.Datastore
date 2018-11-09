@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Google.Cloud.Datastore.V1;
 
-namespace Google.Cloud.Datastore.V1.Mapper
+namespace HigherLogics.Google.Datastore
 {
     /// <summary>
     /// The contract used to map entities to values.

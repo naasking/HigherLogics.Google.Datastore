@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 using Google.Cloud.Datastore.V1;
-using Google.Cloud.Datastore.V1.Mapper;
+using HigherLogics.Google.Datastore;
 
 namespace MapperTests
 {

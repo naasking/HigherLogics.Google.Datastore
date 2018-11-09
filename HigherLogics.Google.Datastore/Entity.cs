@@ -5,7 +5,7 @@ using System.Text;
 using System.Reflection;
 using Google.Cloud.Datastore.V1;
 
-namespace Google.Cloud.Datastore.V1.Mapper
+namespace HigherLogics.Google.Datastore
 {
     /// <summary>
     /// Map entities to/from values.

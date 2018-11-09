@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace Google.Cloud.Datastore.V1.Mapper
+namespace HigherLogics.Google.Datastore
 {
     [StructLayout(LayoutKind.Explicit)]
     struct Union

@@ -2,8 +2,9 @@
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Google.Cloud.Datastore.V1;
 
-namespace Google.Cloud.Datastore.V1.Mapper
+namespace HigherLogics.Google.Datastore
 {
     /// <summary>
     /// Conversions between standard CLR types and Google datastore types.
@@ -72,7 +73,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         public static Value Type(System.Type x) => x.AssemblyQualifiedName;
 
         public static Stream Stream(Value v) => new MemoryStream((byte[])v);
-        public static Value Stream(Stream x) => Google.Protobuf.ByteString.FromStream(x);
+        public static Value Stream(Stream x) => global::Google.Protobuf.ByteString.FromStream(x);
 
         public static string String(Value x) => x.StringValue;
         public static Value String(string x) => x;
