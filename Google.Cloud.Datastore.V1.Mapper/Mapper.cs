@@ -34,7 +34,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <param name="from">The function mapping <see cref="Value"/> to <typeparamref name="T"/>.</param>
         /// <param name="to">The function mapping <typeparamref name="T"/> to <see cref="Value"/>.</param>
-        public static void Override<T>(Func<Value, T> from, Func<T, Value> to)
+        public static void Convert<T>(Func<Value, T> from, Func<T, Value> to)
         {
             Value<T>.From = from ?? throw new ArgumentNullException(nameof(from));
             Value<T>.To = to ?? throw new ArgumentNullException(nameof(to));

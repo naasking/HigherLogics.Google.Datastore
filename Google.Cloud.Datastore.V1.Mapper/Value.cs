@@ -46,12 +46,12 @@ namespace Google.Cloud.Datastore.V1.Mapper
                 EntityMappers(type, toTypes, out to, out from);
 
             if (to != null && from != null)
-                Mapper.Override((Func<Value, T>)from.CreateDelegate(typeof(Func<Value, T>)),
+                Mapper.Convert((Func<Value, T>)from.CreateDelegate(typeof(Func<Value, T>)),
                                 (Func<T, Value>)to.CreateDelegate(typeof(Func<T, Value>)));
             else if (to != null || from != null)
                 throw new Exception("Type " + type.Name + " has only one conversion but needs both.");
             else
-                Mapper.Override<T>(v => throw new InvalidOperationException("No value conversion for type " + type.Name),
+                Mapper.Convert<T>(v => throw new InvalidOperationException("No value conversion for type " + type.Name),
                                    x => throw new InvalidOperationException("No value conversion for type " + type.Name));
         }
 
