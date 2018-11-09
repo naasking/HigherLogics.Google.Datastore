@@ -78,7 +78,8 @@ namespace HigherLogics.Google.Datastore
         public static Stream Stream(Value v) => new MemoryStream((byte[])v);
         public static Value Stream(Stream x) => global::Google.Protobuf.ByteString.FromStream(x);
 
-        public static string String(Value x) => x.StringValue;
+        //FIXME: can Values be null or is this a result of a marshalling error in my code?
+        public static string String(Value x) => x?.StringValue;
         public static Value String(string x) => x;
 
         public static T? Nullable<T>(Value v) where T : struct =>
