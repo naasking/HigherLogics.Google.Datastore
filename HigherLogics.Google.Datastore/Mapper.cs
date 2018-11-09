@@ -162,7 +162,6 @@ namespace HigherLogics.Google.Datastore
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
         /// <param name="keys">The keys to lookup.</param>
-        /// <param name="create">A constructor for creating fresh instances of <typeparamref name="T"/>.</param>
         /// <returns>
         /// A collection of entities with the same size as keys, containing corresponding entity references,
         /// or null where the key was not found.
