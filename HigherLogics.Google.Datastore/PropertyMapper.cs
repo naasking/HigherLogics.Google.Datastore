@@ -38,15 +38,18 @@ namespace HigherLogics.Google.Datastore
         {
             // read/write entities and values using delegates generated from method-backed properties
             var objType = typeof(T);
-            var from = new List<Action<Entity, T>>();
-            var to = new List<Action<T, Entity>>();
             var sset = new Func<string, Action<T, int>, Action<Entity, T>>(Set).GetMethodInfo().GetGenericMethodDefinition();
             var sget = new Func<string, Func<T, int>, Action<T, Entity>>(Get).GetMethodInfo().GetGenericMethodDefinition();
             var oparams = new object[3];
             var gk = getKey = null;
             var sk = setKey = null;
-            foreach (var member in typeof(T).GetProperties())
+            var members = typeof(T).GetProperties();
+            var from = new Action<Entity, T>[members.Length];
+            var to = new Action<T, Entity>[members.Length];
+            int propCount = 0;  // this indexes the valid properties
+            for (int i = 0; i < members.Length; ++i)
             {
+                var member = members[i];
                 //FIXME: can generalize this to work with value types? The value type must be inlined 
                 //into the entity using the 'prefix' parameter. Here we must detect whether the value
                 //type has a Value<T>.From/To, and if not, we use entity deserialization.
@@ -59,15 +62,15 @@ namespace HigherLogics.Google.Datastore
                     //FIXME: I think API supports string keys
                     if (member.PropertyType != typeof(long))
                         throw new NotSupportedException($"{member.PropertyType} is not a supported key type. Supported types are: System.Int64.");
-                    if (getKey != null)
+                    if (gk != null)
                         throw new NotSupportedException($"Duplicate [Key] property {member.DeclaringType}.{member.Name}");
                     var kparams = new object[1];
-                    kparams[0] = member.GetSetMethod().CreateDelegate(typeof(Action<,>).MakeGenericType(objType, typeof(long)));
+                    kparams[0] = member.GetSetMethod()?.CreateDelegate(typeof(Action<,>).MakeGenericType(objType, typeof(long)));
                     sk = setKey = (Action<T, Key>)typeof(PropertyMapper)
                         .GetMethod(nameof(SetKey), BindingFlags.Static | BindingFlags.NonPublic)
                         .MakeGenericMethod(objType)
                         .Invoke(null, kparams);
-                    kparams[0] = member.GetGetMethod().CreateDelegate(typeof(Func<,>).MakeGenericType(objType, typeof(long)));
+                    kparams[0] = member.GetGetMethod()?.CreateDelegate(typeof(Func<,>).MakeGenericType(objType, typeof(long)));
                     gk = getKey = (Func<T, Key>)typeof(PropertyMapper)
                         .GetMethod(nameof(GetKey), BindingFlags.Static | BindingFlags.NonPublic)
                         .MakeGenericMethod(objType)
@@ -75,19 +78,23 @@ namespace HigherLogics.Google.Datastore
                 }
                 else if (f.GetValue(null) == null && f.PropertyType.GetTypeInfo().IsValueType)
                 {
+                    // recursively call map for a struct property
                     oparams[0] = f.Name + "_";
                     map.MakeGenericMethod(f.PropertyType).Invoke(null, oparams);
                 }
                 else
                 {
+                    // this is a reference type, so generate a list of members
                     var tset = typeof(Action<,>).MakeGenericType(objType, member.PropertyType);
-                    from.Add((Action<Entity, T>)sset.MakeGenericMethod(objType, member.PropertyType)
-                        .Invoke(null, new object[] { prefix + member.Name, member.GetSetMethod().CreateDelegate(tset) }));
+                    from[propCount] = (Action<Entity, T>)sset
+                        .MakeGenericMethod(objType, member.PropertyType)
+                        .Invoke(null, new object[] { prefix + member.Name, member.GetSetMethod().CreateDelegate(tset) });
 
                     var t = vals.GetProperty("To", BindingFlags.Static | BindingFlags.Public);
                     var tget = typeof(Func<,>).MakeGenericType(objType, member.PropertyType);
-                    to.Add((Action<T, Entity>)sget.MakeGenericMethod(objType, member.PropertyType)
-                        .Invoke(null, new object[] { prefix + member.Name, member.GetGetMethod().CreateDelegate(tget) }));
+                    to[propCount++] = (Action<T, Entity>)sget
+                        .MakeGenericMethod(objType, member.PropertyType)
+                        .Invoke(null, new object[] { prefix + member.Name, member.GetGetMethod().CreateDelegate(tget) });
                 }
             }
             if (gk == null || sk == null)
@@ -98,7 +105,7 @@ namespace HigherLogics.Google.Datastore
                 if (e == null) return obj;
                 //FIXME: should require non-null keys? Probably not since this will be extended for structs.
                 sk?.Invoke(obj, e.Key);
-                for (int i = 0; i < from.Count; ++i)
+                for (int i = 0; i < propCount; ++i)
                     from[i](e, obj);
                 return obj;
             };
@@ -108,7 +115,7 @@ namespace HigherLogics.Google.Datastore
                 if (obj == null) return e;
                 //FIXME: should require non-null keys? Probably not since this will be extended for structs.
                 e.Key = gk?.Invoke(obj);// ?? Mapper.CreateIncompleteKey<T>();
-                for (int i = 0; i < to.Count; ++i)
+                for (int i = 0; i < propCount; ++i)
                     to[i](obj, e);
                 return e;
             };
@@ -116,16 +123,22 @@ namespace HigherLogics.Google.Datastore
         }
 
         #region Key getters/setters
-        static Func<T, Key> GetKey<T>(Func<T, long> getKey) where T : class =>
-            (obj) =>
+        static Func<T, Key> GetKey<T>(Func<T, long> getKey) where T : class
+        {
+            if (getKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a getter with a [Key] attribute.");
+            return (obj) =>
             {
                 var id = getKey(obj);
-                return id == 0 ? Mapper.CreateIncompleteKey<T>():
+                return id == 0 ? Mapper.CreateIncompleteKey<T>() :
                                  id.ToKey<T>();
             };
+        }
 
-        static Action<T, Key> SetKey<T>(Action<T, long> setKey) where T : class =>
-            (obj, key) => setKey(obj, key.Id());
+        static Action<T, Key> SetKey<T>(Action<T, long> setKey) where T : class
+        {
+            if (setKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a setter with a [Key] attribute.");
+            return (obj, key) => setKey(obj, key.Id());
+        }
         #endregion
 
         #region Property getter/setters
