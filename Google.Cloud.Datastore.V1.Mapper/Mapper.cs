@@ -12,6 +12,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
     /// </summary>
     public static class Mapper
     {
+        #region Configurable parameters
         /// <summary>
         /// The mapper used to marshal values and entities.
         /// </summary>
@@ -38,6 +39,7 @@ namespace Google.Cloud.Datastore.V1.Mapper
             Value<T>.From = from ?? throw new ArgumentNullException(nameof(from));
             Value<T>.To = to ?? throw new ArgumentNullException(nameof(to));
         }
+        #endregion
 
         #region Key extensions
         /// <summary>
@@ -142,18 +144,16 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <param name="keys">The keys to lookup.</param>
         /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
-        /// <param name="create">A constructor for creating fresh instances of <typeparamref name="T"/>.</param>
         /// <returns>
         /// A collection of entities with the same size as keys, containing corresponding entity references,
         /// or null where the key was not found.
         /// </returns>
-        public static IReadOnlyList<T> Lookup<T>(this DatastoreDb db, Func<T> create, IEnumerable<Key> keys, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
+        public static IReadOnlyList<T> Lookup<T>(this DatastoreDb db, IEnumerable<Key> keys, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
-            if (create == null) throw new ArgumentNullException(nameof(create));
             if (keys == null) throw new ArgumentNullException(nameof(keys));
             return db.Lookup(keys, readConsistency, callSettings)
-                     .Select(e => e == null ? default(T) : Entity<T>.From(create(), e))
+                     .Select(e => e == null ? default(T) : Entity<T>.From(Entity<T>.Create(), e))
                      .ToList();
         }
 
@@ -168,10 +168,10 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// A collection of entities with the same size as keys, containing corresponding entity references,
         /// or null where the key was not found.
         /// </returns>
-        public static IReadOnlyList<T> Lookup<T>(this DatastoreDb db, Func<T> create, params Key[] keys)
+        public static IReadOnlyList<T> Lookup<T>(this DatastoreDb db, params Key[] keys)
             where T : class
         {
-            return db.Lookup(create, keys, null, null);
+            return db.Lookup<T>(keys, null, null);
         }
 
         /// <summary>
@@ -182,18 +182,17 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <param name="keys">The key to lookup.</param>
         /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
-        /// <param name="create">A constructor for creating fresh instances of <typeparamref name="T"/>.</param>
         /// <returns>
         /// A collection of entities with the same size as keys, containing corresponding entity references,
         /// or null where the key was not found.
         /// </returns>
-        public static async Task<IReadOnlyList<T>> LookupAsync<T>(this DatastoreDb db, Func<T> create, IEnumerable<Key> keys, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
+        public static async Task<IReadOnlyList<T>> LookupAsync<T>(this DatastoreDb db, IEnumerable<Key> keys, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
-            if (create == null) throw new ArgumentNullException(nameof(create));
+            //if (create == null) throw new ArgumentNullException(nameof(create));
             if (keys == null) throw new ArgumentNullException(nameof(keys));
             var entities = await db.LookupAsync(keys, readConsistency, callSettings);
-            return entities.Select(e => e == null ? default(T) : Entity<T>.From(create(), e))
+            return entities.Select(e => e == null ? default(T) : Entity<T>.From(Entity<T>.Create(), e))
                            .ToList();
         }
 
@@ -203,15 +202,14 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore instance.</param>
         /// <param name="keys">The key to lookup.</param>
-        /// <param name="create">A constructor for creating fresh instances of <typeparamref name="T"/>.</param>
         /// <returns>
         /// A collection of entities with the same size as keys, containing corresponding entity references,
         /// or null where the key was not found.
         /// </returns>
-        public static Task<IReadOnlyList<T>> LookupAsync<T>(this DatastoreDb db, Func<T> create, params Key[] keys)
+        public static Task<IReadOnlyList<T>> LookupAsync<T>(this DatastoreDb db, params Key[] keys)
             where T : class
         {
-            return db.LookupAsync(create, keys, null, null);
+            return db.LookupAsync<T>(keys, null, null);
         }
         #endregion
 
@@ -582,13 +580,12 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="results">The query results.</param>
-        /// <param name="create">The entity constructor.</param>
         /// <returns>A sequence of entities matching the given query.</returns>
-        public static IEnumerable<T> Entities<T>(this DatastoreQueryResults results, Func<T> create)
+        public static IEnumerable<T> Entities<T>(this DatastoreQueryResults results)
             where T : class
         {
             if (results == null) throw new ArgumentNullException(nameof(results));
-            return results.Entities.Select(create);
+            return results.Entities.ToType<T>();
         }
 
         /// <summary>
@@ -596,14 +593,12 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="entities">The sequence of <see cref="Entity"/>.</param>
-        /// <param name="create">The typed entity constructor.</param>
         /// <returns>A sequence of typed entities.</returns>
-        public static IEnumerable<T> Select<T>(this IEnumerable<Entity> entities, Func<T> create)
+        public static IEnumerable<T> ToType<T>(this IEnumerable<Entity> entities)
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            if (create == null) throw new ArgumentNullException(nameof(create));
-            return entities.Select(x => Entity<T>.From(create(), x));
+            return entities.Select(x => Entity<T>.From(Entity<T>.Create(), x));
         }
 
         /// <summary>
@@ -611,14 +606,12 @@ namespace Google.Cloud.Datastore.V1.Mapper
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="entities">The asynchronous sequence of <see cref="Entity"/>.</param>
-        /// <param name="create">The typed entity constructor.</param>
         /// <returns>An asynchronous sequence of typed entities.</returns>
-        public static IAsyncEnumerable<T> Select<T>(this IAsyncEnumerable<Entity> entities, Func<T> create)
+        public static IAsyncEnumerable<T> Select<T>(this IAsyncEnumerable<Entity> entities)
             where T : class
         {
             if (entities == null) throw new ArgumentNullException(nameof(entities));
-            if (create == null) throw new ArgumentNullException(nameof(create));
-            return new AsyncEnumerable<T> { create = create, entities = entities };
+            return new AsyncEnumerable<T> { create = Entity<T>.Create, entities = entities };
         }
 
         sealed class AsyncEnumerable<T> : IAsyncEnumerable<T>
