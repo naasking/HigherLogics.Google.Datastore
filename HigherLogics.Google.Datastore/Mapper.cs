@@ -116,7 +116,6 @@ namespace HigherLogics.Google.Datastore
         public static T Lookup<T>(this DatastoreDb db, Key key, T obj = null, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
             return Entity<T>.From(obj ?? Entity<T>.Create(), db.Lookup(key, readConsistency, callSettings));
         }
 
@@ -133,7 +132,6 @@ namespace HigherLogics.Google.Datastore
         public static async Task<T> LookupAsync<T>(this DatastoreDb db, Key key, T obj = null, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
             return Entity<T>.From(obj ?? Entity<T>.Create(), await db.LookupAsync(key, readConsistency, callSettings));
         }
 
@@ -576,6 +574,14 @@ namespace HigherLogics.Google.Datastore
         #endregion
 
         #region Query extensions on entities
+        /// <summary>
+        /// Create a query for type <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T">The type to query.</typeparam>
+        /// <returns>A query for <typeparamref name="T"/>.</returns>
+        public static Query CreateQuery<T>(this DatastoreDb db) where T : class =>
+            new Query(Kind<T>());
+
         /// <summary>
         /// Access query results as typed entities.
         /// </summary>
