@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.ComponentModel.DataAnnotations;
 using Google.Cloud.Datastore.V1;
+using System.Runtime.Serialization;
 
 namespace HigherLogics.Google.Datastore
 {

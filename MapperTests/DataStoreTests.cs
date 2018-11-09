@@ -31,7 +31,7 @@ namespace MapperTests
             var x = new Simple { Baz = "Hello world!" };
             var xkey = db.Insert(x);
             var db2 = Open();
-            var y = db2.Lookup(new Simple(), xkey);
+            var y = db2.Lookup(xkey, new Simple());
             Assert.Equal(x.Bar, xkey.Id());
             Assert.Equal(x.Bar, y.Bar);
             Assert.Equal(x.Baz, y.Baz);
@@ -50,7 +50,7 @@ namespace MapperTests
             };
             var db = Open();
             var xkey = db.Insert(x);
-            var y = db.Lookup(new Complex(), xkey);
+            var y = db.Lookup(xkey, new Complex());
             Assert.Equal(x.Id, y.Id);
             Assert.Equal(x.Uri, y.Uri);
             Assert.Equal(x.Amount, y.Amount);

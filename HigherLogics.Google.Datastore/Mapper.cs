@@ -113,11 +113,11 @@ namespace HigherLogics.Google.Datastore
         /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>The entity with the specified key, or null if no such entity exists.</returns>
-        public static T Lookup<T>(this DatastoreDb db, T obj, Key key, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
+        public static T Lookup<T>(this DatastoreDb db, Key key, T obj = null, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
-            return Entity<T>.From(obj, db.Lookup(key, readConsistency, callSettings));
+            return Entity<T>.From(obj ?? Entity<T>.Create(), db.Lookup(key, readConsistency, callSettings));
         }
 
         /// <summary>
@@ -130,11 +130,11 @@ namespace HigherLogics.Google.Datastore
         /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>The entity with the specified key, or null if no such entity exists.</returns>
-        public static async Task<T> LookupAsync<T>(this DatastoreDb db, T obj, Key key, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
+        public static async Task<T> LookupAsync<T>(this DatastoreDb db, Key key, T obj = null, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
-            return Entity<T>.From(obj, await db.LookupAsync(key, readConsistency, callSettings));
+            return Entity<T>.From(obj ?? Entity<T>.Create(), await db.LookupAsync(key, readConsistency, callSettings));
         }
 
         /// <summary>
