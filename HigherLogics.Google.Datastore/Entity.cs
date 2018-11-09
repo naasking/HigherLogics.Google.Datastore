@@ -37,18 +37,12 @@ namespace HigherLogics.Google.Datastore
         /// <summary>
         /// Parameterless constructor for type <typeparamref name="T"/>.
         /// </summary>
-        public static Func<T> Constructor { get; set; }
-
-        /// <summary>
-        /// Create an empty instance of type <typeparamref name="T"/>.
-        /// </summary>
-        /// <returns></returns>
-        public static T Create() => Constructor?.Invoke() ?? Activator.CreateInstance<T>();
+        public static Func<T> Create { get; set; }
 
         static Entity()
         {
             // the string prefix is to recursively handle value types as inlined properties
-            Mapper.Default.Map<T>("", out var gk, out var sk, out var from, out var to);
+            Create = Mapper.Default.Map<T>("", out var gk, out var sk, out var from, out var to);
             GetKey = gk;
             SetKey = sk;
             From = from;

@@ -34,7 +34,7 @@ namespace HigherLogics.Google.Datastore
         static readonly MethodInfo map = typeof(PropertyMapper).GetMethod(nameof(PropertyMapper.Map));
 
         /// <inheritdoc />
-        public void Map<T>(string prefix, out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
+        public Func<T> Map<T>(string prefix, out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
         {
             // read/write entities and values using delegates generated from method-backed properties
             var objType = typeof(T);
@@ -112,6 +112,7 @@ namespace HigherLogics.Google.Datastore
                     x(obj, e);
                 return e;
             };
+            return () => Activator.CreateInstance<T>();
         }
 
         #region Key getters/setters

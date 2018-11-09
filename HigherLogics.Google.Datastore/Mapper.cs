@@ -27,7 +27,7 @@ namespace HigherLogics.Google.Datastore
         public static void Constructor<T>(Func<T> create)
             where T : class
         {
-            Entity<T>.Constructor = create;
+            Entity<T>.Create = create;
         }
 
         /// <summary>
