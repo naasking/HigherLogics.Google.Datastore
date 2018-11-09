@@ -50,10 +50,13 @@ namespace HigherLogics.Google.Datastore
         {
             switch (x.Kind)
             {
-                case DateTimeKind.Utc: return x;
-                case DateTimeKind.Local: return x.ToUniversalTime();
+                case DateTimeKind.Local:
+                    return x.ToUniversalTime();
+                case DateTimeKind.Utc:
+                    return x;
                 default:
-                    throw new ArgumentException("DateTime.Kind must be either local or UTC.");
+                    return new DateTime(x.Ticks, DateTimeKind.Utc);
+                    //throw new ArgumentException("DateTime.Kind must be either local or UTC.");
             }
         }
 
