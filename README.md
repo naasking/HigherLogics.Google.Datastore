@@ -1,6 +1,8 @@
-# Google.Cloud.Datastore.V1.Mapper
+# HigherLogics.Google.Datastore
 
 A convention-based Google Datastore entities to POCO auto mapper:
+
+    using HigherLogics.Google.Datastore;
 
     public class Foo
     {
