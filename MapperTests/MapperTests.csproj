@@ -127,7 +127,7 @@
   <ItemGroup>
     <Compile Include="DataStoreTests.cs" />
     <Compile Include="EntityTests.cs" />
-    <Compile Include="Tests.cs" />
+    <Compile Include="ConversionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
