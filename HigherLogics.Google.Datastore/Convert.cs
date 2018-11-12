@@ -81,7 +81,7 @@ namespace HigherLogics.Google.Datastore
         //FIXME: can Values be null or is this a result of a marshalling error in my code?
         public static string String(Value x) => x?.StringValue;
         public static Value String(string x) => x;
-
+        
         public static T? Nullable<T>(Value v) where T : struct =>
             v.IsNull ? new T?() : Value<T>.From(v);
         public static Value Nullable<T>(T? v) where T : struct =>
@@ -93,7 +93,6 @@ namespace HigherLogics.Google.Datastore
 
         public static T EntityValue<T>(Value v) where T : class =>
             Entity<T>.From(Entity<T>.Create(), v.EntityValue);
-
         public static Value EntityValue<T>(T v) where T : class =>
             Entity<T>.To(new Entity(), v);
 
@@ -127,6 +126,11 @@ namespace HigherLogics.Google.Datastore
             v.ArrayValue.Values.Select(Value<KeyValuePair<TKey, TValue>>.From).ToDictionary(x => x.Key, x => x.Value);
         public static Value Dictionary<TKey, TValue>(Dictionary<TKey, TValue> v) =>
             v.Select(Value<KeyValuePair<TKey, TValue>>.To).ToArray();
+
+        //FIXME: add stack, set, queue, all collections under System.Collections.Generic? Or figure out
+        //a way to dispatch to the underlying interfaces
+
+        //FIXME: add overloads for Tuple<*> and ValueTuple<*>
 
         #endregion
     }

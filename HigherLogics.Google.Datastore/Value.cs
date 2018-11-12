@@ -46,7 +46,7 @@ namespace HigherLogics.Google.Datastore
 
             if (to != null && from != null)
                 Mapper.Convert((Func<Value, T>)from.CreateDelegate(typeof(Func<Value, T>)),
-                                (Func<T, Value>)to.CreateDelegate(typeof(Func<T, Value>)));
+                               (Func<T, Value>)to.CreateDelegate(typeof(Func<T, Value>)));
             else if (to != null || from != null)
                 throw new Exception("Type " + type.Name + " has only one conversion but needs both.");
             else

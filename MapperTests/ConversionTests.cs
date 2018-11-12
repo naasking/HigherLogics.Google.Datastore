@@ -288,6 +288,17 @@ namespace MapperTests
             Assert.Equal(i, Value<DateTimeKind>.From(e));
         }
 
+        public enum Temp : sbyte { Foo, Bar }
+
+        [Theory]
+        [InlineData(Temp.Bar)]
+        [InlineData(Temp.Foo)]
+        public static void EnumTempTests(Temp i)
+        {
+            var e = Value<Temp>.To(i);
+            Assert.Equal(i, Value<Temp>.From(e));
+        }
+
         [Theory]
         [InlineData(DateTimeKind.Local)]
         [InlineData(DateTimeKind.Utc)]
