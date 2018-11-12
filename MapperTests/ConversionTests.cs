@@ -102,6 +102,8 @@ namespace MapperTests
         [InlineData(double.MinValue / 3)]
         [InlineData(double.MinValue / 99)]
         [InlineData(double.MinValue / 99999)]
+        [InlineData(double.NegativeInfinity)]
+        [InlineData(double.PositiveInfinity)]
         public static void Double(double x)
         {
             Value e = x;
@@ -222,6 +224,14 @@ namespace MapperTests
         }
 
         [Fact]
+        public static void DoubleArrays()
+        {
+            var x = new[] { 0.0, double.MinValue, double.MaxValue, double.MaxValue / 123, double.NegativeInfinity, double.PositiveInfinity };
+            var v = Value<double[]>.To(x);
+            Assert.Equal(x, Value<double[]>.From(v));
+        }
+
+        [Fact]
         public static void IntEnumerable()
         {
             var x = new[] { 0, int.MinValue, int.MaxValue, 99 };
@@ -260,6 +270,13 @@ namespace MapperTests
             Assert.Equal(i, Value<decimal?>.From(e));
         }
 
+        [Fact]
+        public static void NullableDecimalArray()
+        {
+            var x = new[] { 0M, decimal.MinValue, new decimal?(), decimal.MaxValue, 99M, };
+            var e = Value<decimal?[]>.To(x);
+            Assert.Equal(x, Value<decimal?[]>.From(e));
+        }
 
         [Theory]
         [InlineData(DateTimeKind.Local)]
@@ -297,6 +314,41 @@ namespace MapperTests
                 rt.Read(buf, 0, buf.Length);
                 Assert.Equal(bytes, buf);
             }
+        }
+
+        [Fact]
+        public static void KeyValuePairTests()
+        {
+            var kv = new KeyValuePair<int, string>(99, "hello world!");
+            var e = Value<KeyValuePair<int, string>>.To(kv);
+            var rt = Value<KeyValuePair<int, string>>.From(e);
+            Assert.Equal(kv, rt);
+        }
+
+        [Fact]
+        public static void DictionaryTests()
+        {
+            var kv = new Dictionary<int, string>{
+                { 99, "hello world!" },
+                { int.MinValue, "it's the end!" },
+            };
+            var e = Value<Dictionary<int, string>>.To(kv);
+            var rt = Value<Dictionary<int, string>>.From(e);
+            Assert.NotNull(e.ArrayValue);
+            Assert.NotNull(e.ArrayValue.Values[0].ArrayValue);
+            Assert.Equal(kv.First().Key, e.ArrayValue.Values[0].ArrayValue.Values[0]);
+            Assert.Equal(kv, rt);
+        }
+
+        [Fact]
+        public static void ListTests()
+        {
+            var l = new List<string>{ "hello world!", "it's the end!" };
+            var e = Value<List<string>>.To(l);
+            var rt = Value<List<string>>.From(e);
+            Assert.NotNull(e.ArrayValue);
+            Assert.Equal(l[0], e.ArrayValue.Values[0].StringValue);
+            Assert.Equal(l, rt);
         }
     }
 }

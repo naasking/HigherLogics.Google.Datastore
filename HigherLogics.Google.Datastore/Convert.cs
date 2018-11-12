@@ -91,15 +91,43 @@ namespace HigherLogics.Google.Datastore
             v.ArrayValue.Values.Select(Value<T>.From).ToArray();
         public static Value Array<T>(T[] v) => v.Select(Value<T>.To).ToArray();
 
-        public static IEnumerable<T> IEnumerable<T>(Value v) =>
-            v.ArrayValue.Values.Select(Value<T>.From);
-        public static Value IEnumerable<T>(IEnumerable<T> v) =>
-            v.Select(Value<T>.To).ToArray();
-
         public static T EntityValue<T>(Value v) where T : class =>
             Entity<T>.From(Entity<T>.Create(), v.EntityValue);
 
         public static Value EntityValue<T>(T v) where T : class =>
             Entity<T>.To(new Entity(), v);
+
+        #region Collection conversions
+
+        public static IEnumerable<T> IEnumerable<T>(Value v) =>
+            v.ArrayValue.Values.Select(Value<T>.From);
+        public static Value IEnumerable<T>(IEnumerable<T> v) =>
+            v.Select(Value<T>.To).ToArray();
+
+        public static List<T> List<T>(Value v) =>
+            v.ArrayValue.Values.Select(Value<T>.From).ToList();
+        public static Value List<T>(List<T> v) =>
+            v.Select(Value<T>.To).ToArray();
+
+        public static IList<T> IList<T>(Value v) =>
+            v.ArrayValue.Values.Select(Value<T>.From).ToList();
+        public static Value IList<T>(IList<T> v) =>
+            v.Select(Value<T>.To).ToArray();
+
+        public static KeyValuePair<TKey, TValue> KeyValuePair<TKey, TValue>(Value v)
+        {
+            var kv = v.ArrayValue;
+            if (kv.Values.Count != 2) throw new InvalidDataException($"Deserializing to {typeof(KeyValuePair<TKey, TValue>)} requires a 2-element array but found a {kv.Values.Count}-element array.");
+            return new KeyValuePair<TKey, TValue>(Value<TKey>.From(kv.Values[0]), Value<TValue>.From(kv.Values[1]));
+        }
+        public static Value KeyValuePair<TKey, TValue>(KeyValuePair<TKey, TValue> v) => 
+            new[] { Value<TKey>.To(v.Key), Value<TValue>.To(v.Value) };
+
+        public static Dictionary<TKey, TValue> Dictionary<TKey, TValue>(Value v) =>
+            v.ArrayValue.Values.Select(Value<KeyValuePair<TKey, TValue>>.From).ToDictionary(x => x.Key, x => x.Value);
+        public static Value Dictionary<TKey, TValue>(Dictionary<TKey, TValue> v) =>
+            v.Select(Value<KeyValuePair<TKey, TValue>>.To).ToArray();
+
+        #endregion
     }
 }
