@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
@@ -278,6 +280,23 @@ namespace MapperTests
         {
             var e = Value<DateTimeKind?>.To(i);
             Assert.Equal(i, Value<DateTimeKind?>.From(e));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("214 159 196 149 203 218 203 163 137 126")]
+        [InlineData("122 233 93 243 249 155 70 181 173 128 184 194 81 160 13 219 8 140 24 197 79 22 77 89 250 157 203 7 98 226 75 237")]
+        public static void StreamTests(string data)
+        {
+            var bytes = data?.Split(' ').Select(byte.Parse).ToArray() ?? new byte[0];
+            using (var ms = new MemoryStream(bytes))
+            {
+                var e = Value<Stream>.To(ms);
+                var rt = Value<Stream>.From(e);
+                var buf = new byte[rt.Length];
+                rt.Read(buf, 0, buf.Length);
+                Assert.Equal(bytes, buf);
+            }
         }
     }
 }
