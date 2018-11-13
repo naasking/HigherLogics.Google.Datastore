@@ -69,52 +69,54 @@ namespace HigherLogics.Google.Datastore
         public static char Char(Value x) => x.StringValue[0];
         public static Value Char(char x) => x.ToString();
 
-        public static Uri Uri(Value x) => new System.Uri(x.StringValue);
-        public static Value Uri(Uri x) => x.ToString();
+        public static Uri Uri(Value x) => x == null ? null : new System.Uri(x.StringValue);
+        public static Value Uri(Uri x) => x?.ToString();
 
-        public static System.Type Type(Value x) => System.Type.GetType(x.StringValue);
-        public static Value Type(System.Type x) => x.AssemblyQualifiedName;
+        public static System.Type Type(Value x) => x == null ? null : System.Type.GetType(x.StringValue);
+        public static Value Type(System.Type x) => x?.AssemblyQualifiedName;
 
-        public static Stream Stream(Value v) => new MemoryStream((byte[])v);
-        public static Value Stream(Stream x) => global::Google.Protobuf.ByteString.FromStream(x);
+        public static Stream Stream(Value v) => v == null ? null : new MemoryStream((byte[])v);
+        public static Value Stream(Stream x) => x == null ? null : global::Google.Protobuf.ByteString.FromStream(x);
 
         //FIXME: can Values be null or is this a result of a marshalling error in my code?
         public static string String(Value x) => x?.StringValue;
         public static Value String(string x) => x;
         
         public static T? Nullable<T>(Value v) where T : struct =>
-            v.IsNull ? new T?() : Value<T>.From(v);
+            v?.IsNull == false ? Value<T>.From(v) : new T?();
         public static Value Nullable<T>(T? v) where T : struct =>
             v == null ? Value.ForNull() : Value<T>.To(v.Value);
 
         public static T[] Array<T>(Value v) =>
-            v.ArrayValue.Values.Select(Value<T>.From).ToArray();
-        public static Value Array<T>(T[] v) => v.Select(Value<T>.To).ToArray();
+            v?.ArrayValue.Values.Select(Value<T>.From).ToArray();
+        public static Value Array<T>(T[] v) => v?.Select(Value<T>.To).ToArray();
 
         public static T EntityValue<T>(Value v) where T : class =>
-            Entity<T>.From(Entity<T>.Create(), v.EntityValue);
+            v == null ? null : Entity<T>.From(Entity<T>.Create(), v.EntityValue);
         public static Value EntityValue<T>(T v) where T : class =>
-            Entity<T>.To(new Entity(), v);
+            v == null ? null : Entity<T>.To(new Entity(), v);
 
         #region Collection conversions
 
         public static IEnumerable<T> IEnumerable<T>(Value v) =>
-            v.ArrayValue.Values.Select(Value<T>.From);
+            v?.ArrayValue.Values.Select(Value<T>.From);
         public static Value IEnumerable<T>(IEnumerable<T> v) =>
-            v.Select(Value<T>.To).ToArray();
+            v?.Select(Value<T>.To).ToArray();
 
         public static List<T> List<T>(Value v) =>
-            v.ArrayValue.Values.Select(Value<T>.From).ToList();
+            v?.ArrayValue.Values.Select(Value<T>.From).ToList();
         public static Value List<T>(List<T> v) =>
-            v.Select(Value<T>.To).ToArray();
+            v?.Select(Value<T>.To).ToArray();
 
         public static IList<T> IList<T>(Value v) =>
-            v.ArrayValue.Values.Select(Value<T>.From).ToList();
+            v?.ArrayValue.Values.Select(Value<T>.From).ToList();
         public static Value IList<T>(IList<T> v) =>
-            v.Select(Value<T>.To).ToArray();
+            v?.Select(Value<T>.To).ToArray();
 
         public static KeyValuePair<TKey, TValue> KeyValuePair<TKey, TValue>(Value v)
         {
+            if (v == null)
+                throw new ArgumentNullException("value");
             var kv = v.ArrayValue;
             if (kv.Values.Count != 2) throw new InvalidDataException($"Deserializing to {typeof(KeyValuePair<TKey, TValue>)} requires a 2-element array but found a {kv.Values.Count}-element array.");
             return new KeyValuePair<TKey, TValue>(Value<TKey>.From(kv.Values[0]), Value<TValue>.From(kv.Values[1]));
@@ -123,9 +125,9 @@ namespace HigherLogics.Google.Datastore
             new[] { Value<TKey>.To(v.Key), Value<TValue>.To(v.Value) };
 
         public static Dictionary<TKey, TValue> Dictionary<TKey, TValue>(Value v) =>
-            v.ArrayValue.Values.Select(Value<KeyValuePair<TKey, TValue>>.From).ToDictionary(x => x.Key, x => x.Value);
+            v?.ArrayValue.Values.Select(Value<KeyValuePair<TKey, TValue>>.From).ToDictionary(x => x.Key, x => x.Value);
         public static Value Dictionary<TKey, TValue>(Dictionary<TKey, TValue> v) =>
-            v.Select(Value<KeyValuePair<TKey, TValue>>.To).ToArray();
+            v?.Select(Value<KeyValuePair<TKey, TValue>>.To).ToArray();
 
         //FIXME: add stack, set, queue, all collections under System.Collections.Generic? Or figure out
         //a way to dispatch to the underlying interfaces
