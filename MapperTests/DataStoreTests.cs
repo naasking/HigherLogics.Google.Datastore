@@ -18,6 +18,8 @@ namespace MapperTests
         const string projectId = "mappertests";
         const string namespaceId = "";
 
+        //FIXME: test upserts
+
         static DatastoreDb Open()
         {
             var client = DatastoreClient.Create(new Channel(emulatorHost, emulatorPort, ChannelCredentials.Insecure));
@@ -61,6 +63,42 @@ namespace MapperTests
             //Assert.Equal(x.Amount, Value<decimal>.From(e["Amount"]));
             //Assert.NotEqual(x.Id.ToByteArray(), e["Uri"]);
             //Assert.NotEqual(x.Uri.ToString(), e["Id"]);
+        }
+
+        [Fact]
+        public static void NestedEntityTests()
+        {
+            var x = new NestedEntities
+            {
+                Simple = new Simple { Baz = "hello world!" },
+                Complex = new Complex { Amount = 99, Id = Guid.NewGuid(), Uri = new Uri("https://google.com") },
+                Enumerable = new Enumerable
+                {
+                    Ints = null,
+                    Chars = "hello world!".ToCharArray(),
+                    Floats = new[] { float.MinValue, float.MaxValue, 0, float.NegativeInfinity, float.PositiveInfinity, float.NaN },
+                },
+                SimpleList = new[]
+                {
+                    new Simple { Baz = "Simple0" },
+                    new Simple { Baz = "Simple1" },
+                    new Simple { Baz = "Simple2" },
+                }
+            };
+            var db = Open();
+            var xkey = db.Insert(x);
+            var rt = db.Lookup(xkey, new NestedEntities());
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Equal(x.Simple.Bar, rt.Simple.Bar);
+            Assert.Equal(x.Simple.Baz, rt.Simple.Baz);
+            Assert.Equal(x.Complex.Amount, rt.Complex.Amount);
+            Assert.Equal(x.Complex.Id, rt.Complex.Id);
+            Assert.Equal(x.Complex.Uri, rt.Complex.Uri);
+            Assert.Equal(x.Enumerable.Ints, rt.Enumerable.Ints);
+            Assert.Equal(x.Enumerable.Chars, rt.Enumerable.Chars);
+            Assert.Equal(x.Enumerable.Floats, rt.Enumerable.Floats);
+            Assert.Equal(x.SimpleList.Select(z => z.Bar), rt.SimpleList.Select(z => z.Bar));
+            Assert.Equal(x.SimpleList.Select(z => z.Baz), rt.SimpleList.Select(z => z.Baz));
         }
     }
 }

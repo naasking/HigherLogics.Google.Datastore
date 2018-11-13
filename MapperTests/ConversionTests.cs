@@ -11,26 +11,33 @@ namespace MapperTests
 {
     public class ConversionTests
     {
-        [Fact]
-        public static void String()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("foo")]
+        public static void String(string s)
         {
-            var s = "foo";
             var e = Value<string>.To(s);
             Assert.Equal(s, Value<string>.From(e));
         }
 
-        [Fact]
-        public static void Int32()
+        [Theory]
+        [InlineData(99)]
+        [InlineData(0)]
+        [InlineData(int.MaxValue)]
+        [InlineData(int.MinValue)]
+        public static void Int32(int i)
         {
-            var i = 99;
             var e = Value<int>.To(i);
             Assert.Equal(i, Value<int>.From(e));
         }
 
-        [Fact]
-        public static void UInt32()
+        [Theory]
+        [InlineData((uint)99)]
+        [InlineData((uint)0)]
+        [InlineData(uint.MaxValue)]
+        [InlineData(uint.MinValue)]
+        public static void UInt32(uint i)
         {
-            uint i = 99;
             var e = Value<uint>.To(i);
             Assert.Equal(i, Value<uint>.From(e));
         }
@@ -143,6 +150,7 @@ namespace MapperTests
         }
 
         [Theory]
+        [InlineData(0)]
         [InlineData(long.MaxValue)]
         [InlineData(long.MinValue)]
         [InlineData(long.MaxValue / 999999)]
@@ -352,14 +360,56 @@ namespace MapperTests
         }
 
         [Fact]
+        public static void DictionaryNullTests()
+        {
+            Dictionary<int, string> kv = null;
+            var e = Value<Dictionary<int, string>>.To(kv);
+            var rt = Value<Dictionary<int, string>>.From(e);
+            Assert.Null(e);
+            Assert.Null(rt);
+        }
+
+        [Fact]
         public static void ListTests()
         {
-            var l = new List<string>{ "hello world!", "it's the end!" };
+            var l = new List<string> { "hello world!", "it's the end!" };
             var e = Value<List<string>>.To(l);
             var rt = Value<List<string>>.From(e);
             Assert.NotNull(e.ArrayValue);
             Assert.Equal(l[0], e.ArrayValue.Values[0].StringValue);
             Assert.Equal(l, rt);
+        }
+
+        [Fact]
+        public static void IListTests()
+        {
+            IList<string> l = new List<string> { "hello world!", "it's the end!" };
+            var e = Value<IList<string>>.To(l);
+            var rt = Value<IList<string>>.From(e);
+            Assert.NotNull(e.ArrayValue);
+            Assert.Equal(l[0], e.ArrayValue.Values[0].StringValue);
+            Assert.Equal(l, rt);
+        }
+
+        [Fact]
+        public static void EntityTest()
+        {
+            var x = new Simple { Bar = 11, Baz = "hello world!" };
+            var e = Value<Simple>.To(x);
+            var rt = Value<Simple>.From(e);
+            Assert.NotNull(e.EntityValue);
+            Assert.Equal(x.Bar, rt.Bar);
+            Assert.Equal(x.Baz, rt.Baz);
+        }
+
+        [Fact]
+        public static void EntityNullTest()
+        {
+            Simple x = null;
+            var e = Value<Simple>.To(x);
+            var rt = Value<Simple>.From(e);
+            Assert.Null(e);
+            Assert.Null(rt);
         }
     }
 }
