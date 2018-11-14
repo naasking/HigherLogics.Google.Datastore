@@ -15,6 +15,11 @@ namespace HigherLogics.Google.Datastore
         where T : class
     {
         /// <summary>
+        /// The kind used to find entities in the datastore.
+        /// </summary>
+        public static string Kind { get; internal set; } = typeof(T).FullName;
+
+        /// <summary>
         /// Update an object with the given entity data.
         /// </summary>
         public static Func<T, Entity, T> From { get; private set; }
@@ -42,7 +47,7 @@ namespace HigherLogics.Google.Datastore
         static Entity()
         {
             // the string prefix is to recursively handle value types as inlined properties
-            Create = Mapper.Default.Map<T>("", out var gk, out var sk, out var from, out var to);
+            Create = Mapper.Default.Map<T>(out var gk, out var sk, out var from, out var to);
             GetKey = gk;
             SetKey = sk;
             From = from;

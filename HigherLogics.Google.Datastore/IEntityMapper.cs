@@ -16,7 +16,8 @@ namespace HigherLogics.Google.Datastore
         /// <typeparam name="T"></typeparam>
         /// <param name="from"></param>
         /// <param name="to"></param>
-        Func<T> Map<T>(string prefix, out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> from, out Func<Entity, T, Entity> to);
+        Func<T> Map<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> from, out Func<Entity, T, Entity> to)
+            where T : class;
 
         //FIXME: may need to add a dictionary/hashtable as a parameter to each delegate
         //in order to handle circular references

@@ -48,7 +48,15 @@ namespace HigherLogics.Google.Datastore
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <returns>A kind identifier for the entity type <typeparamref name="T"/>.</returns>
-        public static string Kind<T>() where T : class => typeof(T).FullName;
+        public static string Kind<T>() where T : class => Entity<T>.Kind;
+
+        /// <summary>
+        /// Generate a kind for the given type.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="kind">The kind to use for entities of type <typeparamref name="T"/>.</param>
+        /// <returns>A kind identifier for the entity type <typeparamref name="T"/>.</returns>
+        public static void Kind<T>(string kind) where T : class => Entity<T>.Kind = kind;
 
         /// <summary>
         /// Create a KeyFactory using the type name.
