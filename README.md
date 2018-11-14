@@ -54,7 +54,7 @@ Result sets from datastore return a sequence of untyped entities which
 you can easily convert to a typed sequence as follows:
 
     var results = db.RunQuery(query)
-					.Entities<Foo>();
+                    .Entities<Foo>();
 
 # Performance Optimizations
 
