@@ -1,6 +1,7 @@
 # HigherLogics.Google.Datastore
 
-A convention-based Google Datastore entities to POCO auto mapper:
+A convention-based Google Datastore entities to POCO auto mapper suitable
+for small to medium sized projects:
 
     using HigherLogics.Google.Datastore;
 
@@ -18,14 +19,42 @@ A convention-based Google Datastore entities to POCO auto mapper:
 
 It uses the standard attributes in the `System.ComponentModel.DataAnnotations`
 namespace to designate the entity keys. At the moment, only Int64 keys
-are permitted.
+are supported.
+
+# Custom Value Conversions
 
 Mapping should work for most built in CLR types, including all primitive
-types, arrays, dates and nested entities. If a value conversion is missing,
-you can specify it as follows:
+types, arrays, dates and nested entities. You can specify any missing
+value conversions as follows:
 
     Mapper.Convert(from: (Value v) => ...create T,
                    to:   (T obj) => ...create Value);
+
+# Integration with Existing Data
+
+By default the full type name is used as the entity kind. To support
+integration with existing data sets, you can specify the kind to use
+for a given type:
+
+    Mapper.Kind<Foo>("Books");
+
+# Query Extensions
+
+You can create a query using one of the following methods:
+
+    var query = new Query(Mapper.Kind<T>())
+
+Or:
+
+	var db = new Google.Cloud.Datastore.V1.DatastoreDb("MyProject");
+	...
+	var query = db.CreateQuery<T>();
+
+Result sets from datastore return a sequence of untyped entities which
+you can easily convert to a typed sequence as follows:
+
+    var results = db.RunQuery(query)
+					.Entities<Foo>();
 
 # Performance Optimizations
 
@@ -58,4 +87,4 @@ assembly.
    completing
  * add something like [EntityField(string name)] to permit customizing the
    entity field names, which will make it easier to integrate with existing
-   systems
+   data

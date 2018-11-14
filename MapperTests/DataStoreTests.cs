@@ -99,6 +99,30 @@ namespace MapperTests
             Assert.Equal(x.Enumerable.Floats, rt.Enumerable.Floats);
             Assert.Equal(x.SimpleList.Select(z => z.Bar), rt.SimpleList.Select(z => z.Bar));
             Assert.Equal(x.SimpleList.Select(z => z.Baz), rt.SimpleList.Select(z => z.Baz));
+            //only root entities get key values, nested entities do not?
+            //Assert.True(x.SimpleList.All(z => z.Bar != 0));
+            //Assert.True(rt.SimpleList.All(z => z.Bar != 0));
         }
+
+        //[Fact]
+        //public static void NestedKey()
+        //{
+        //    var e = new Entity()
+        //    {
+        //        Key = Mapper.CreateIncompleteKey<Simple>(),
+        //        ["Foo"] = new Entity()
+        //        {
+        //            Key = Mapper.CreateIncompleteKey<Simple>(),
+        //        },
+        //    };
+        //    var db = Open();
+        //    var xkey = db.Insert(e);
+        //    var rt = db.Lookup(xkey);
+        //    Assert.Equal(e.Key.Id(), rt.Key.Id());
+        //    Assert.Equal(e.Key, rt.Key);
+        //    Assert.NotEqual(0, e.Key.Id());
+        //    Assert.Equal(0, e["Foo"].EntityValue.Key.Id());
+        //    Assert.Equal(0, rt["Foo"].EntityValue.Key.Id());
+        //}
     }
 }
