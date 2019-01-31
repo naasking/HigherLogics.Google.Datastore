@@ -347,15 +347,16 @@ namespace MapperTests
         [Fact]
         public static void DictionaryTests()
         {
-            var kv = new Dictionary<int, string>{
+            var kv = new Dictionary<int, string>
+            {
                 { 99, "hello world!" },
                 { int.MinValue, "it's the end!" },
             };
             var e = Value<Dictionary<int, string>>.To(kv);
             var rt = Value<Dictionary<int, string>>.From(e);
             Assert.NotNull(e.ArrayValue);
-            Assert.NotNull(e.ArrayValue.Values[0].ArrayValue);
-            Assert.Equal(kv.First().Key, e.ArrayValue.Values[0].ArrayValue.Values[0]);
+            //Assert.NotNull(e.EntityValue.Values[0].ArrayValue);
+            //Assert.Equal(kv.First().Key, e.ArrayValue.Values[0].ArrayValue.Values[0]);
             Assert.Equal(kv, rt);
         }
 
