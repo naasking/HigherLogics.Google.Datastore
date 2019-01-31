@@ -21,6 +21,17 @@ It uses the standard attributes in the `System.ComponentModel.DataAnnotations`
 namespace to designate the entity keys. At the moment, only Int64 keys
 are supported.
 
+One caveat: this library is intentionally limited to relatively flat
+POCOs, where entities don't contain foreign keys to other entities. Any
+such nested relations will be serialized as embedded entities. Anything
+more starts needing ORM-like features, requiring session-level map
+of keys to/from entities, transparently loading of associations and
+collections, and other features that can drastically impact performance.
+
+So at the moment, associations to foreign entities must be designated
+by a property of type Key as with the usual Datastore API, and they
+must be manually loaded, inserted, etc.
+
 # Custom Value Conversions
 
 Mapping should work for most built in CLR types, including all primitive
