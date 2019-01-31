@@ -81,7 +81,7 @@ namespace HigherLogics.Google.Datastore
                     //restructuring this loop because the delegate signatures for structs require a ref as first
                     //parameter so the current delegate arrays are insufficient.
                     oparams[0] = f.Name + "_";
-                    mapClass.MakeGenericMethod(f.PropertyType).Invoke(null, oparams);
+                    mapStruct.MakeGenericMethod(f.PropertyType).Invoke(null, oparams);
                 }
                 else
                 {
@@ -161,8 +161,8 @@ namespace HigherLogics.Google.Datastore
             (obj, e) => e[name] = Value<TField>.To(getter(obj));
 
         //FUTURE: this may be less efficient than it could be.
-        //FIXME: duplicate Entity<T>.To/From/Create but for value types. Then we can eliminate this map parameter which
-        //would recursive reflection calls to MapStruct.
+        //FIXME: duplicate Entity<T>.To/From/Create but for value types. Then we can eliminate
+        //this map parameter which would recursive reflection calls to MapStruct.
         static VAction<T, Entity> SetStructStruct<T, TField>(string name, VAction<T, TField> setter, Func<TField, Entity, TField> map)
             where T : struct
             where TField : struct =>

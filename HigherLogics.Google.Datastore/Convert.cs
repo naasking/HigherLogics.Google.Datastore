@@ -134,6 +134,45 @@ namespace HigherLogics.Google.Datastore
 
         //FIXME: add overloads for Tuple<*> and ValueTuple<*>
 
+        public static Tuple<T0, T1> Tuple<T0, T1>(Value x) =>
+            System.Tuple.Create(
+                Value<T0>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item1)]),
+                Value<T1>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item2)]));
+        public static Value Tuple<T0, T1>(Tuple<T0, T1> x) =>
+            new Entity
+            {
+                [nameof(x.Item1)] = Value<T0>.To(x.Item1),
+                [nameof(x.Item2)] = Value<T1>.To(x.Item2),
+            };
+
+        public static Tuple<T0, T1, T2> Tuple<T0, T1, T2>(Value x) =>
+            System.Tuple.Create(
+                Value<T0>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2>.Item1)]),
+                Value<T1>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2>.Item2)]),
+                Value<T2>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2>.Item3)]));
+        public static Value Tuple<T0, T1, T2>(Tuple<T0, T1, T2> x) =>
+            new Entity
+            {
+                [nameof(x.Item1)] = Value<T0>.To(x.Item1),
+                [nameof(x.Item2)] = Value<T1>.To(x.Item2),
+                [nameof(x.Item3)] = Value<T2>.To(x.Item3),
+            };
+
+        public static Tuple<T0, T1, T2, T3> Tuple<T0, T1, T2, T3>(Value x) =>
+            System.Tuple.Create(
+                Value<T0>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2, T3>.Item1)]),
+                Value<T1>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2, T3>.Item2)]),
+                Value<T2>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2, T3>.Item3)]),
+                Value<T3>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2, T3>.Item4)]));
+        public static Value Tuple<T0, T1, T2, T3>(Tuple<T0, T1, T2, T3> x) =>
+            new Entity
+            {
+                [nameof(x.Item1)] = Value<T0>.To(x.Item1),
+                [nameof(x.Item2)] = Value<T1>.To(x.Item2),
+                [nameof(x.Item3)] = Value<T2>.To(x.Item3),
+                [nameof(x.Item4)] = Value<T3>.To(x.Item4),
+            };
+
         #endregion
     }
 }
