@@ -83,8 +83,8 @@ assembly.
 # Future Work
 
  * only Sytem.Int64 keys are currently supported.
- * preliminary support for value types that are inlined into entities needs
-   completing
+ * support for value types that are inlined into entities
+ * all nested entities are embedded, not linked as foreign associations
  * add something like [EntityField(string name)] to permit customizing the
    entity field names, which will make it easier to integrate with existing
    data
