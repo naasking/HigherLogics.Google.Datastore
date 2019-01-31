@@ -15,7 +15,7 @@ namespace HigherLogics.Google.Datastore
     /// <typeparam name="T1"></typeparam>
     /// <param name="obj"></param>
     /// <returns></returns>
-    delegate T1 VFunc<T0, T1>(ref T0 obj) where T0 : struct;
+    delegate T1 VFunc<T0, T1>(ref T0 obj);
 
     /// <summary>
     /// Open access delegates for struct setters.
@@ -24,7 +24,7 @@ namespace HigherLogics.Google.Datastore
     /// <typeparam name="T1"></typeparam>
     /// <param name="arg0"></param>
     /// <param name="arg1"></param>
-    delegate void VAction<T0, T1>(ref T0 arg0, T1 arg1) where T0 : struct;
+    delegate void VAction<T0, T1>(ref T0 arg0, T1 arg1);
     
     /// <summary>
     /// Generates mapping delegates without any runtime code generation.
@@ -36,16 +36,25 @@ namespace HigherLogics.Google.Datastore
 
         /// <inheritdoc />
         public Func<T> Map<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
-            where T : class
+            //where T : class
         {
             // read/write entities and values using delegates generated from method-backed properties
+            if (typeof(T).GetTypeInfo().IsValueType)
+                MapStruct<T>(out getKey, out setKey, out From, out To);
+            else
+                MapClass<T>(out getKey, out setKey, out From, out To);
+            return () => Activator.CreateInstance<T>();
+        }
+
+        void MapClass<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
+        {
             var objType = typeof(T);
-            var sset = new Func<string, Action<T, int>, Action<Entity, T>>(Set).GetMethodInfo().GetGenericMethodDefinition();
-            var sget = new Func<string, Func<T, int>, Action<T, Entity>>(Get).GetMethodInfo().GetGenericMethodDefinition();
+            var sset = new Func<string, Action<T, int>, Action<Entity, T>>(ClassSet).GetMethodInfo().GetGenericMethodDefinition();
+            var sget = new Func<string, Func<T, int>, Action<T, Entity>>(ClassGet).GetMethodInfo().GetGenericMethodDefinition();
             var oparams = new object[3];
             var gk = getKey = null;
             var sk = setKey = null;
-            var members = typeof(T).GetProperties();
+            var members = objType.GetProperties();
             var from = new Action<Entity, T>[members.Length];
             var to = new Action<T, Entity>[members.Length];
             int propCount = 0;  // this indexes the valid properties
@@ -53,8 +62,6 @@ namespace HigherLogics.Google.Datastore
             {
                 var member = members[i];
                 // extract delegates from Value<TProperty>.From/To for each member of T
-                var vals = typeof(Value<>).MakeGenericType(member.PropertyType);
-                var f = vals.GetProperty(nameof(Value<object>.From), BindingFlags.Static | BindingFlags.Public);
                 if (member.GetCustomAttribute<KeyAttribute>() != null)
                 {
                     //FIXME: I think API supports string keys
@@ -74,15 +81,6 @@ namespace HigherLogics.Google.Datastore
                         .MakeGenericMethod(objType)
                         .Invoke(null, kparams);
                 }
-                else if (f.GetValue(null) == null && f.PropertyType.GetTypeInfo().IsValueType)
-                {
-                    //FIXME: call MapStruct for a struct property that has no Value conversion. This returns a set
-                    //of delegates which have to be wrapped by GetStruct/SetStruct. I think this will require
-                    //restructuring this loop because the delegate signatures for structs require a ref as first
-                    //parameter so the current delegate arrays are insufficient.
-                    oparams[0] = f.Name + "_";
-                    mapStruct.MakeGenericMethod(f.PropertyType).Invoke(null, oparams);
-                }
                 else
                 {
                     // this is a reference type, so accumulate a list of getters/setters for the type's members
@@ -92,7 +90,6 @@ namespace HigherLogics.Google.Datastore
                         .MakeGenericMethod(objType, member.PropertyType)
                         .Invoke(null, new object[] { member.Name, member.GetSetMethod().CreateDelegate(tset) });
 
-                    var t = vals.GetProperty("To", BindingFlags.Static | BindingFlags.Public);
                     var tget = typeof(Func<,>).MakeGenericType(objType, member.PropertyType);
                     to[propCount++] = (Action<T, Entity>)sget
                         .MakeGenericMethod(objType, member.PropertyType)
@@ -121,17 +118,48 @@ namespace HigherLogics.Google.Datastore
                     to[i](obj, e);
                 return e;
             };
-            return () => Activator.CreateInstance<T>();
         }
 
-        public void MapStruct<T>(string prefix, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
-            where T : struct
+        void MapStruct<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
         {
-            var members = typeof(T).GetProperties();
+            var objType = typeof(T);
+            var sset = new Func<string, VAction<T, int>, VAction<T, Entity>>(StructSet).GetMethodInfo().GetGenericMethodDefinition();
+            var sget = new Func<string, VFunc<T, int>, VAction<T, Entity>>(StructGet).GetMethodInfo().GetGenericMethodDefinition();
+            var members = objType.GetProperties();
             var from = new VAction<T, Entity>[members.Length];
             var to = new VAction<T, Entity>[members.Length];
-            From = null;
-            To = null;
+            // value types can't have keys
+            getKey = null;
+            setKey = null;
+            for (int i = 0; i < members.Length; ++i)
+            {
+                // this is a reference type, so accumulate a list of getters/setters for the type's members
+                //FIXME: add support for overridable field members via attributes
+                var member = members[i];
+                var tset = typeof(VAction<,>).MakeGenericType(objType, member.PropertyType);
+                from[i] = (VAction<T, Entity>)sset
+                    .MakeGenericMethod(objType, member.PropertyType)
+                    .Invoke(null, new object[] { member.Name, member.GetSetMethod().CreateDelegate(tset) });
+
+                var tget = typeof(VFunc<,>).MakeGenericType(objType, member.PropertyType);
+                to[i] = (VAction<T, Entity>)sget
+                    .MakeGenericMethod(objType, member.PropertyType)
+                    .Invoke(null, new object[] { member.Name, member.GetGetMethod().CreateDelegate(tget) });
+            }
+            From = (obj, e) =>
+            {
+                if (e == null) throw new ArgumentNullException("entity");
+                for (var i = 0; i < from.Length; ++i)
+                    from[i](ref obj, e);
+                return obj;
+            };
+            To = (e, obj) =>
+            {
+                if (e == null) throw new ArgumentNullException("entity");
+                for (var i = 0; i < to.Length; ++i)
+                    to[i](ref obj, e);
+                return e;
+            };
         }
 
         #region Key getters/setters
@@ -154,27 +182,35 @@ namespace HigherLogics.Google.Datastore
         #endregion
 
         #region Property getter/setters
-        static Action<Entity, T> Set<T, TField>(string name, Action<T, TField> setter) =>
+        static Action<Entity, T> ClassSet<T, TField>(string name, Action<T, TField> setter) =>
             (e, obj) => setter(obj, Value<TField>.From(e[name]));
 
-        static Action<T, Entity> Get<T, TField>(string name, Func<T, TField> getter) =>
+        static Action<T, Entity> ClassGet<T, TField>(string name, Func<T, TField> getter) =>
             (obj, e) => e[name] = Value<TField>.To(getter(obj));
 
-        //FUTURE: this may be less efficient than it could be.
-        //FIXME: duplicate Entity<T>.To/From/Create but for value types. Then we can eliminate
-        //this map parameter which would recursive reflection calls to MapStruct.
-        static VAction<T, Entity> SetStructStruct<T, TField>(string name, VAction<T, TField> setter, Func<TField, Entity, TField> map)
-            where T : struct
-            where TField : struct =>
-            (ref T obj, Entity e) => setter(ref obj, map(default(TField), e));
+        static VAction<T, Entity> StructSet<T, TField>(string name, VAction<T, TField> setter) =>
+            (ref T obj, Entity e) => setter(ref obj, Value<TField>.From(e[name]));
 
-        static VAction<T, Entity> SetStructClass<T, TField>(string name, VAction<T, TField> setter)
-            where T : struct
-            where TField : class =>
-            (ref T obj, Entity e) => setter(ref obj, Entity<TField>.From(Entity<TField>.Create(), e));
-
-        static VAction<T, Entity> GetStruct<T, TField>(string name, VFunc<T, TField> getter, Func<Entity, TField, Entity> map) where T : struct =>
-            (ref T obj, Entity e) => map(e, getter(ref obj));
+        static VAction<T, Entity> StructGet<T, TField>(string name, VFunc<T, TField> getter) =>
+            (ref T obj, Entity e) => e[name] = Value<TField>.To(getter(ref obj));
         #endregion
+
+        //#region Struct getters/setters
+        ////FUTURE: this may be less efficient than it could be.
+        ////FIXME: duplicate Entity<T>.To/From/Create but for value types. Then we can eliminate
+        ////this map parameter which would recursive reflection calls to MapStruct.
+        //static VAction<T, Entity> SetStructStruct<T, TField>(string name, VAction<T, TField> setter, Func<TField, Entity, TField> map)
+        //    where T : struct
+        //    where TField : struct =>
+        //    (ref T obj, Entity e) => setter(ref obj, map(default(TField), e));
+
+        //static VAction<T, Entity> SetStructClass<T, TField>(string name, VAction<T, TField> setter)
+        //    where T : struct
+        //    where TField : class =>
+        //    (ref T obj, Entity e) => setter(ref obj, Entity<TField>.From(Entity<TField>.Create(), e));
+
+        //static VAction<T, Entity> GetStruct<T, TField>(string name, VFunc<T, TField> getter, Func<Entity, TField, Entity> map) where T : struct =>
+        //    (ref T obj, Entity e) => map(e, getter(ref obj));
+        //#endregion
     }
 }

@@ -96,9 +96,9 @@ namespace HigherLogics.Google.Datastore
             v?.ArrayValue.Values.Select(Value<T>.From).ToArray();
         public static Value Array<T>(T[] v) => v?.Select(Value<T>.To).ToArray();
 
-        public static T EntityValue<T>(Value v) where T : class =>
-            v == null ? null : Entity<T>.From(Entity<T>.Create(), v.EntityValue);
-        public static Value EntityValue<T>(T v) where T : class =>
+        public static T EntityValue<T>(Value v) =>
+            v == null ? default(T) : Entity<T>.From(Entity<T>.Create(), v.EntityValue);
+        public static Value EntityValue<T>(T v) =>
             v == null ? null : Entity<T>.To(new Entity(), v);
 
         #region Collection conversions
