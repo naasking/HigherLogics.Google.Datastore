@@ -11,6 +11,11 @@ namespace HigherLogics.Google.Datastore
     /// </summary>
     static class Convert
     {
+        public static Value Value(Value x) => x;
+
+        public static Key Key(Value x) => x.KeyValue;
+        public static Value Key(Key x) => x;
+
         public static int Int32(Value x) => (int)x.IntegerValue;
         public static Value Int32(int x) => x;
 
@@ -85,7 +90,7 @@ namespace HigherLogics.Google.Datastore
         public static T? Nullable<T>(Value v) where T : struct =>
             v?.IsNull == false ? Value<T>.From(v) : new T?();
         public static Value Nullable<T>(T? v) where T : struct =>
-            v == null ? Value.ForNull() : Value<T>.To(v.Value);
+            v == null ? global::Google.Cloud.Datastore.V1.Value.ForNull() : Value<T>.To(v.Value);
 
         public static T[] Array<T>(Value v) =>
             v?.ArrayValue.Values.Select(Value<T>.From).ToArray();
@@ -133,11 +138,10 @@ namespace HigherLogics.Google.Datastore
         //a way to dispatch to the underlying interfaces
 
         //FIXME: add overloads for Tuple<*> and ValueTuple<*>
-
         public static Tuple<T0, T1> Tuple<T0, T1>(Value x) =>
-            System.Tuple.Create(
-                Value<T0>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item1)]),
-                Value<T1>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item2)]));
+    System.Tuple.Create(
+        Value<T0>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item1)]),
+        Value<T1>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item2)]));
         public static Value Tuple<T0, T1>(Tuple<T0, T1> x) =>
             new Entity
             {
@@ -165,6 +169,45 @@ namespace HigherLogics.Google.Datastore
                 Value<T2>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2, T3>.Item3)]),
                 Value<T3>.From(x.EntityValue[nameof(System.Tuple<T0, T1, T2, T3>.Item4)]));
         public static Value Tuple<T0, T1, T2, T3>(Tuple<T0, T1, T2, T3> x) =>
+            new Entity
+            {
+                [nameof(x.Item1)] = Value<T0>.To(x.Item1),
+                [nameof(x.Item2)] = Value<T1>.To(x.Item2),
+                [nameof(x.Item3)] = Value<T2>.To(x.Item3),
+                [nameof(x.Item4)] = Value<T3>.To(x.Item4),
+            };
+
+        public static ValueTuple<T0, T1> ValueTuple<T0, T1>(Value x) =>
+            System.ValueTuple.Create(
+                Value<T0>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1>.Item1)]),
+                Value<T1>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1>.Item2)]));
+        public static Value ValueTuple<T0, T1>(ValueTuple<T0, T1> x) =>
+            new Entity
+            {
+                [nameof(x.Item1)] = Value<T0>.To(x.Item1),
+                [nameof(x.Item2)] = Value<T1>.To(x.Item2),
+            };
+
+        public static ValueTuple<T0, T1, T2> ValueTuple<T0, T1, T2>(Value x) =>
+            System.ValueTuple.Create(
+                Value<T0>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1, T2>.Item1)]),
+                Value<T1>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1, T2>.Item2)]),
+                Value<T2>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1, T2>.Item3)]));
+        public static Value ValueTuple<T0, T1, T2>(ValueTuple<T0, T1, T2> x) =>
+            new Entity
+            {
+                [nameof(x.Item1)] = Value<T0>.To(x.Item1),
+                [nameof(x.Item2)] = Value<T1>.To(x.Item2),
+                [nameof(x.Item3)] = Value<T2>.To(x.Item3),
+            };
+
+        public static ValueTuple<T0, T1, T2, T3> ValueTuple<T0, T1, T2, T3>(Value x) =>
+            System.ValueTuple.Create(
+                Value<T0>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1, T2, T3>.Item1)]),
+                Value<T1>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1, T2, T3>.Item2)]),
+                Value<T2>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1, T2, T3>.Item3)]),
+                Value<T3>.From(x.EntityValue[nameof(System.ValueTuple<T0, T1, T2, T3>.Item4)]));
+        public static Value ValueTuple<T0, T1, T2, T3>(ValueTuple<T0, T1, T2, T3> x) =>
             new Entity
             {
                 [nameof(x.Item1)] = Value<T0>.To(x.Item1),
