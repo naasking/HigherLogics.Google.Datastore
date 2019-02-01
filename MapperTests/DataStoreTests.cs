@@ -104,6 +104,30 @@ namespace MapperTests
             //Assert.True(rt.SimpleList.All(z => z.Bar != 0));
         }
 
+        [Fact]
+        public static void NestedStructTests()
+        {
+            var x = new NestedStruct
+            {
+                Foo = new Foo
+                {
+                    Name = "Sandro Magi",
+                    Simple = new Simple
+                    {
+                        Bar = 33,
+                        Baz = "hello world!",
+                    }
+                },
+            };
+            var db = Open();
+            var xkey = db.Insert(x);
+            var rt = db.Lookup(xkey, new NestedStruct());
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Equal(x.Foo.Name, rt.Foo.Name);
+            Assert.Equal(x.Foo.Simple.Bar, rt.Foo.Simple.Bar);
+            Assert.Equal(x.Foo.Simple.Baz, rt.Foo.Simple.Baz);
+        }
+
         //[Fact]
         //public static void NestedKey()
         //{
