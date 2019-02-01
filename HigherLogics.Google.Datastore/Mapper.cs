@@ -96,7 +96,8 @@ namespace HigherLogics.Google.Datastore
         static Key Init<T>(T obj, Key key)
             where T : class
         {
-            Entity<T>.SetKey(obj, key);
+            if (key != null)
+                Entity<T>.SetKey(obj, key);
             return key;
         }
 
