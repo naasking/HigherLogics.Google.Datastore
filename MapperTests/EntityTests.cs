@@ -60,6 +60,14 @@ namespace MapperTests
         public NestedStruct Next { get; set; }
     }
 
+    class IgnoreFields
+    {
+        [Key]
+        public long Id { get; set; }
+        [IgnoreDatastoreAttribute]
+        public string Data { get; set; }
+    }
+
     public static class EntityTests
     {
         [Fact]
@@ -187,6 +195,21 @@ namespace MapperTests
             Assert.Equal(x.Foo.Name, rt.Foo.Name);
             Assert.Equal(x.Foo.Simple.Bar, rt.Foo.Simple.Bar);
             Assert.Equal(x.Foo.Simple.Baz, rt.Foo.Simple.Baz);
+        }
+
+        [Fact]
+        public static void IgnorePropertyTests()
+        {
+            var x = new IgnoreFields
+            {
+                Id = int.MaxValue / 2,
+                Data = "hello world!",
+            };
+            var e = Entity<IgnoreFields>.To(new Entity(), x);
+            var rt = Entity<IgnoreFields>.From(new IgnoreFields(), e);
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Null(rt.Data);
+            Assert.NotEqual(x.Data, rt.Data);
         }
     }
 }

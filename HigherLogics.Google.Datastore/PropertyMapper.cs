@@ -80,7 +80,7 @@ namespace HigherLogics.Google.Datastore
                         .MakeGenericMethod(objType)
                         .Invoke(null, kparams);
                 }
-                else
+                else if (member.GetCustomAttribute<IgnoreDatastoreAttributeAttribute>() == null)
                 {
                     // this is a reference type, so accumulate a list of getters/setters for the type's members
                     //FIXME: add support for overridable field members via attributes
@@ -132,32 +132,36 @@ namespace HigherLogics.Google.Datastore
             // value types can't have keys
             getKey = null;
             setKey = null;
+            int propCount = 0;
             for (int i = 0; i < members.Length; ++i)
             {
                 // this is a reference type, so accumulate a list of getters/setters for the type's members
                 //FIXME: add support for overridable field members via attributes
                 var member = members[i];
-                var tset = typeof(VAction<,>).MakeGenericType(objType, member.PropertyType);
-                from[i] = (VAction<T, Entity>)sset
-                    .MakeGenericMethod(objType, member.PropertyType)
-                    .Invoke(null, new object[] { member.Name, member.GetSetMethod().CreateDelegate(tset) });
+                if (member.GetCustomAttribute<IgnoreDatastoreAttributeAttribute>() == null)
+                {
+                    var tset = typeof(VAction<,>).MakeGenericType(objType, member.PropertyType);
+                    from[propCount] = (VAction<T, Entity>)sset
+                        .MakeGenericMethod(objType, member.PropertyType)
+                        .Invoke(null, new object[] { member.Name, member.GetSetMethod().CreateDelegate(tset) });
 
-                var tget = typeof(VFunc<,>).MakeGenericType(objType, member.PropertyType);
-                to[i] = (VAction<T, Entity>)sget
-                    .MakeGenericMethod(objType, member.PropertyType)
-                    .Invoke(null, new object[] { member.Name, member.GetGetMethod().CreateDelegate(tget) });
+                    var tget = typeof(VFunc<,>).MakeGenericType(objType, member.PropertyType);
+                    to[propCount++] = (VAction<T, Entity>)sget
+                        .MakeGenericMethod(objType, member.PropertyType)
+                        .Invoke(null, new object[] { member.Name, member.GetGetMethod().CreateDelegate(tget) });
+                }
             }
             From = (obj, e) =>
             {
                 if (e == null) throw new ArgumentNullException("entity");
-                for (var i = 0; i < from.Length; ++i)
+                for (var i = 0; i < propCount; ++i)
                     from[i](ref obj, e);
                 return obj;
             };
             To = (e, obj) =>
             {
                 if (e == null) throw new ArgumentNullException("entity");
-                for (var i = 0; i < to.Length; ++i)
+                for (var i = 0; i < propCount; ++i)
                     to[i](ref obj, e);
                 return e;
             };
