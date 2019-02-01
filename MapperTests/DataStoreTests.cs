@@ -140,7 +140,7 @@ namespace MapperTests
                 Simple = new FK<Simple>(s),
             };
             var db = Open();
-            var skey = db.Insert(s);
+            var skey = db.Upsert(s);
             Assert.Equal(s.Bar, skey.Id());
 
             var xkey = db.Insert(x);
@@ -149,6 +149,20 @@ namespace MapperTests
             Assert.Equal(x.Simple.Key.Id(), rt.Simple.Key.Id());
             var rts = rt.Simple.Get(db);
             Assert.Equal(s.Baz, rts.Baz);
+
+            // mutate the property and ensure it saves
+            var s2 = new Simple
+            {
+                Baz = "foo!",
+            };
+            rt.Simple.Value = s2;
+            db.Upsert(s2);
+            db.Upsert(rt);
+            Assert.NotEqual(0, s2.Bar);
+            Assert.Equal(s2.Bar, rt.Simple.Value.Bar);
+
+            var rt2 = db.Lookup(xkey, new FKClass());
+            Assert.Equal(rt.Simple.Value.Bar, rt2.Simple.Get(db).Bar);
         }
 
         //[Fact]

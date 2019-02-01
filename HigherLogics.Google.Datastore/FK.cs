@@ -15,14 +15,7 @@ namespace HigherLogics.Google.Datastore
     {
         T value;
         Key key;
-
-        internal FK() { }
-
-        static FK()
-        {
-            Entity<FK<T>>.Create = () => new FK<T>();
-        }
-
+        
         /// <summary>
         /// Construct a new foreign key reference.
         /// </summary>
@@ -39,8 +32,8 @@ namespace HigherLogics.Google.Datastore
         public FK(T value)
         {
             if (Entity<T>.GetKey == null)
-                throw new InvalidOperationException($"Type {typeof(T).Name} does not have a property decorated with [Key].");
-            this.value = value ?? throw new ArgumentNullException(nameof(value));
+                throw new ArgumentException($"Type {typeof(T).Name} does not have a property decorated with [Key].");
+            this.value = value;
         }
 
         /// <summary>
@@ -48,8 +41,27 @@ namespace HigherLogics.Google.Datastore
         /// </summary>
         public Key Key
         {
-            get => key ?? Entity<T>.GetKey(value);
+            // return assigned key or dynamically generate a key if the value is not null
+            get => key ?? (value == null ? null : Entity<T>.GetKey(value));
             private set => key = value;
+        }
+
+        /// <summary>
+        /// The entity referenced by this key.
+        /// </summary>
+        public T Value
+        {
+            // return the cached value if it's loaded or if no key is present
+            get => key != null && this.value == null
+                ? throw new InvalidOperationException("Entity is not loaded.")
+                : this.value;
+            set
+            {
+                // reset the stored key reference so it's re-saved with the new entity's key
+                if (key != null)
+                    key = null;
+                this.value = value;
+            }
         }
 
         /// <summary>
