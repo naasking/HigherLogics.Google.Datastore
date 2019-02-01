@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Google.Cloud.Datastore.V1;
+using G = Google.Type;
 
 namespace HigherLogics.Google.Datastore
 {
@@ -162,8 +163,8 @@ namespace HigherLogics.Google.Datastore
 
         //FIXME: can Values be null or is this a result of a marshalling error in my code?
         public static string String(Value x) => x?.StringValue;
-        public static Value String(string x) => x;
-        
+        //public static Value String(string x) => x;
+
         public static T? Nullable<T>(Value v) where T : struct =>
             v?.IsNull == false ? Value<T>.From(v) : new T?();
         public static Value Nullable<T>(T? v) where T : struct =>
@@ -174,12 +175,12 @@ namespace HigherLogics.Google.Datastore
         public static Value Array<T>(T[] v) => v?.Select(Value<T>.To).ToArray();
 
         public static ArraySegment<T> ArraySegment<T>(Value v) =>
-            v == null ? default(ArraySegment<T>):
+            v == null ? default(ArraySegment<T>) :
                         new ArraySegment<T>(Array<T>(v.EntityValue[nameof(System.ArraySegment<T>.Array)]),
                                             Int32(v.EntityValue[nameof(System.ArraySegment<T>.Offset)]),
                                             Int32(v.EntityValue[nameof(System.ArraySegment<T>.Count)]));
         public static Value ArraySegment<T>(ArraySegment<T> v) =>
-            v.Array == null ? null: new Entity
+            v.Array == null ? null : new Entity
             {
                 [nameof(v.Array)] = Array<T>(v.Array),
                 [nameof(v.Offset)] = Int32(v.Offset),
@@ -216,7 +217,7 @@ namespace HigherLogics.Google.Datastore
             if (kv.Values.Count != 2) throw new InvalidDataException($"Deserializing to {typeof(KeyValuePair<TKey, TValue>)} requires a 2-element array but found a {kv.Values.Count}-element array.");
             return new KeyValuePair<TKey, TValue>(Value<TKey>.From(kv.Values[0]), Value<TValue>.From(kv.Values[1]));
         }
-        public static Value KeyValuePair<TKey, TValue>(KeyValuePair<TKey, TValue> v) => 
+        public static Value KeyValuePair<TKey, TValue>(KeyValuePair<TKey, TValue> v) =>
             new[] { Value<TKey>.To(v.Key), Value<TValue>.To(v.Value) };
 
         public static Dictionary<TKey, TValue> Dictionary<TKey, TValue>(Value v) =>
@@ -227,11 +228,14 @@ namespace HigherLogics.Google.Datastore
         //FIXME: add stack, set, queue, all collections under System.Collections.Generic? Or figure out
         //a way to dispatch to the underlying interfaces
 
+        #endregion
+
+        #region Tuple conversions
         //FIXME: add overloads for Tuple<*> and ValueTuple<*>
         public static Tuple<T0, T1> Tuple<T0, T1>(Value x) =>
-    System.Tuple.Create(
-        Value<T0>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item1)]),
-        Value<T1>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item2)]));
+            System.Tuple.Create(
+                Value<T0>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item1)]),
+                Value<T1>.From(x.EntityValue[nameof(System.Tuple<T0, T1>.Item2)]));
         public static Value Tuple<T0, T1>(Tuple<T0, T1> x) =>
             new Entity
             {
@@ -305,6 +309,100 @@ namespace HigherLogics.Google.Datastore
                 [nameof(x.Item3)] = Value<T2>.To(x.Item3),
                 [nameof(x.Item4)] = Value<T3>.To(x.Item4),
             };
+
+        #endregion
+
+        #region Google type conversions
+
+        public static G.Color Color(Value x) =>
+            x == null ? null : new G.Color
+            {
+                Red = Single(x.EntityValue[nameof(G.Color.Red)]),
+                Green = Single(x.EntityValue[nameof(G.Color.Green)]),
+                Blue = Single(x.EntityValue[nameof(G.Color.Blue)]),
+                Alpha = Nullable<float>(x.EntityValue[nameof(G.Color.Alpha)]),
+            };
+        public static Value Color(G.Color x) => new Entity
+        {
+            [nameof(x.Red)] = Single(x.Red),
+            [nameof(x.Green)] = Single(x.Green),
+            [nameof(x.Blue)] = Single(x.Blue),
+            [nameof(x.Alpha)] = Nullable(x.Alpha),
+        };
+
+        public static G.Date Date(Value x) => new G.Date
+        {
+            Year = Int32(x.EntityValue[nameof(G.Date.Year)]),
+            Month = Int32(x.EntityValue[nameof(G.Date.Month)]),
+            Day = Int32(x.EntityValue[nameof(G.Date.Day)]),
+        };
+        public static Value Date(G.Date x) => new Entity
+        {
+            [nameof(x.Year)] = Int32(x.Year),
+            [nameof(x.Month)] = Int32(x.Month),
+            [nameof(x.Day)] = Int32(x.Day),
+        };
+
+        public static G.Money Money(Value x) => new G.Money
+        {
+            CurrencyCode = String(x.EntityValue[nameof(G.Money.CurrencyCode)]),
+            Units = x.EntityValue[nameof(G.Money.Units)].IntegerValue,
+            Nanos = Int32(x.EntityValue[nameof(G.Money.Nanos)]),
+        };
+        public static Value Money(G.Money x) => new Entity
+        {
+            [nameof(x.CurrencyCode)] = x.CurrencyCode,
+            [nameof(x.Units)] = x.Units,
+            [nameof(x.Nanos)] = Int32(x.Nanos),
+        };
+
+        public static G.PostalAddress PostalAddress(Value x)
+        {
+            var addr = new G.PostalAddress
+            {
+                Sublocality = String(x.EntityValue[nameof(G.PostalAddress.Sublocality)]),
+                Locality = String(x.EntityValue[nameof(G.PostalAddress.Locality)]),
+                AdministrativeArea = String(x.EntityValue[nameof(G.PostalAddress.AdministrativeArea)]),
+                SortingCode = String(x.EntityValue[nameof(G.PostalAddress.SortingCode)]),
+                PostalCode = String(x.EntityValue[nameof(G.PostalAddress.PostalCode)]),
+                LanguageCode = String(x.EntityValue[nameof(G.PostalAddress.LanguageCode)]),
+                RegionCode = String(x.EntityValue[nameof(G.PostalAddress.RegionCode)]),
+                Organization = String(x.EntityValue[nameof(G.PostalAddress.Organization)]),
+                Revision = Int32(x.EntityValue[nameof(G.PostalAddress.Revision)]),
+            };
+            addr.AddressLines.AddRange(IEnumerable<string>(x.EntityValue[nameof(G.PostalAddress.AddressLines)]));
+            addr.Recipients.AddRange(IEnumerable<string>(x.EntityValue[nameof(G.PostalAddress.Recipients)]));
+            return addr;
+        }
+        public static Value PostalAddress(G.PostalAddress x) => new Entity
+        {
+            [nameof(x.AddressLines)] = IEnumerable(x.AddressLines),
+            [nameof(x.Recipients)] = IEnumerable(x.Recipients),
+            [nameof(x.Sublocality)] = String(x.Sublocality),
+            [nameof(x.Locality)] = String(x.Locality),
+            [nameof(x.AdministrativeArea)] = String(x.AdministrativeArea),
+            [nameof(x.SortingCode)] = String(x.SortingCode),
+            [nameof(x.PostalCode)] = String(x.PostalCode),
+            [nameof(x.LanguageCode)] = String(x.LanguageCode),
+            [nameof(x.RegionCode)] = String(x.RegionCode),
+            [nameof(x.Organization)] = String(x.Organization),
+            [nameof(x.Revision)] = Int32(x.Revision),
+        };
+
+        public static G.TimeOfDay TimeOfDay(Value x) => new G.TimeOfDay
+        {
+            Hours = Int32(x.EntityValue[nameof(G.TimeOfDay.Hours)]),
+            Minutes = Int32(x.EntityValue[nameof(G.TimeOfDay.Minutes)]),
+            Seconds = Int32(x.EntityValue[nameof(G.TimeOfDay.Seconds)]),
+            Nanos = Int32(x.EntityValue[nameof(G.TimeOfDay.Nanos)]),
+        };
+        public static Value TimeOfDay(G.TimeOfDay x) => new Entity
+        {
+            [nameof(x.Hours)] = Int32(x.Hours),
+            [nameof(x.Minutes)] = Int32(x.Minutes),
+            [nameof(x.Seconds)] = Int32(x.Seconds),
+            [nameof(x.Nanos)] = Int32(x.Nanos),
+        };
 
         #endregion
     }

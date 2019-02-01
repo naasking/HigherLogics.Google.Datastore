@@ -6,6 +6,7 @@ using System.Text;
 using System.ComponentModel.DataAnnotations;
 using Xunit;
 using Google.Cloud.Datastore.V1;
+using Google.Type;
 using HigherLogics.Google.Datastore;
 
 namespace MapperTests
@@ -25,6 +26,7 @@ namespace MapperTests
         public Uri Uri { get; set; }
         public decimal Amount { get; set; }
         public Stream IO { get; set; }
+        public Google.Type.LatLng Coords { get; set; }
     }
 
     class Enumerable
@@ -75,6 +77,18 @@ namespace MapperTests
         public FK<Simple> Simple { get; set; }
     }
 
+    class GoogleTypes
+    {
+        [Key]
+        public long Id { get; set; }
+        public LatLng Coords { get; set; }
+        public Color Color { get; set; }
+        public Date Date { get; set; }
+        public Money Money { get; set; }
+        public PostalAddress PostalAddress { get; set; }
+        public TimeOfDay TimeOfDay { get; set; }
+    }
+
     public static class EntityTests
     {
         [Fact]
@@ -114,6 +128,7 @@ namespace MapperTests
                 Uri = new Uri("http://google.ca"),
                 Amount = 987654321M,
                 IO = new MemoryStream(Encoding.ASCII.GetBytes("hello world!")),
+                Coords = new Google.Type.LatLng { Latitude = 3.14, Longitude = 2.718 },
             };
             var e = Entity<Complex>.To(new Entity(), x);
             var y = Entity<Complex>.From(new Complex(), e);
@@ -127,6 +142,9 @@ namespace MapperTests
             Assert.Equal(x.Amount, Value<decimal>.From(e["Amount"]));
             Assert.NotEqual(x.Id.ToByteArray(), e["Uri"]);
             Assert.NotEqual(x.Uri.ToString(), e["Id"]);
+            Assert.NotNull(y.Coords);
+            Assert.Equal(x.Coords.Latitude, y.Coords.Latitude);
+            Assert.Equal(x.Coords.Longitude, y.Coords.Longitude);
         }
 
         [Fact]
@@ -237,5 +255,47 @@ namespace MapperTests
             Assert.Equal(x.Id, rt.Id);
             Assert.Equal(x.Simple.Key, rt.Simple.Key);
         }
+
+        [Fact]
+        public static void GoogleTypeTests()
+        {
+            var x = new GoogleTypes
+            {
+                Color = new Color { Red = 123, Green = 231, Blue = 312, Alpha = 1 },
+                Coords = new LatLng { Latitude = 3.14, Longitude = 2.718 },
+                Date = new Date { Day = 21, Month = 4, Year = 2019 },
+                Money = new Money { CurrencyCode = "CAD", Units = long.MaxValue / 2, Nanos = 33 },
+                PostalAddress = new PostalAddress
+                {
+                    Recipients = { "Someone", "No one" },
+                    AddressLines = { "1234 Somewhere rd." },
+                    AdministrativeArea = "Admin",
+                    LanguageCode = "en-US",
+                    Locality = "Some City",
+                    Organization = "Org",
+                    PostalCode = "6434543",
+                    RegionCode = "Reg.",
+                    Revision= 4,
+                    SortingCode = "Sort",
+                    Sublocality = "sublocal",
+                },
+                TimeOfDay = new TimeOfDay
+                {
+                    Hours = 17,
+                    Minutes = 23,
+                    Seconds = 59,
+                    Nanos = 123,
+                },
+            };
+            var e = Entity<GoogleTypes>.To(new Entity(), x);
+            var y = Entity<GoogleTypes>.From(new GoogleTypes(), e);
+            Assert.Equal(x.Color, y.Color);
+            Assert.Equal(x.Coords, y.Coords);
+            Assert.Equal(x.Money, y.Money);
+            Assert.Equal(x.Date, y.Date);
+            Assert.Equal(x.PostalAddress, y.PostalAddress);
+            Assert.Equal(x.TimeOfDay, y.TimeOfDay);
+        }
+
     }
 }
