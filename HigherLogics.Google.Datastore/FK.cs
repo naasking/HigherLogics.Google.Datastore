@@ -16,6 +16,13 @@ namespace HigherLogics.Google.Datastore
         T value;
         Key key;
 
+        internal FK() { }
+
+        static FK()
+        {
+            Entity<FK<T>>.Create = () => new FK<T>();
+        }
+
         /// <summary>
         /// Construct a new foreign key reference.
         /// </summary>
@@ -33,7 +40,7 @@ namespace HigherLogics.Google.Datastore
         {
             if (Entity<T>.GetKey == null)
                 throw new InvalidOperationException($"Type {typeof(T).Name} does not have a property decorated with [Key].");
-            this.value = value;
+            this.value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         /// <summary>
