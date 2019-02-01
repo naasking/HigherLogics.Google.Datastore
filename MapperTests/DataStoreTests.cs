@@ -39,6 +39,22 @@ namespace MapperTests
             Assert.Equal(x.Baz, y.Baz);
         }
 
+        [Fact]
+        public static void DeleteSimple()
+        {
+            var db = Open();
+            var x = new Simple { Baz = "Hello world!" };
+            var xkey = db.Upsert(x);
+            var db2 = Open();
+            var y = db2.Lookup(xkey, new Simple());
+            Assert.Equal(x.Bar, xkey.Id());
+            Assert.Equal(x.Bar, y.Bar);
+            Assert.Equal(x.Baz, y.Baz);
+            
+            db2.Delete<Simple>(x);
+            var z = db2.Lookup(xkey, new Simple());
+            Assert.Null(z);
+        }
 
         [Fact]
         public static void ComplexTests()

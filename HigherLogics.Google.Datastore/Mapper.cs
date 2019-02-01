@@ -365,7 +365,7 @@ namespace HigherLogics.Google.Datastore
         public static void Delete<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            db.Delete(entities, null);
+            db.Delete(entities as IEnumerable<T>, default(CallSettings));
         }
 
         /// <summary>
@@ -378,7 +378,7 @@ namespace HigherLogics.Google.Datastore
         public static Task DeleteAsync<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            return db.DeleteAsync(entities, null);
+            return db.DeleteAsync(entities as IEnumerable<T>, default(CallSettings));
         }
         #endregion
 

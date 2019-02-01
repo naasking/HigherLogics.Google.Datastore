@@ -102,7 +102,7 @@ namespace HigherLogics.Google.Datastore
             From = (obj, e) =>
             {
                 if (obj == null) throw new ArgumentNullException("entity");
-                if (e == null) return obj;
+                if (e == null) return default(T);
                 //FIXME: should require non-null keys? Probably not since this will be extended for structs.
                 sk(obj, e.Key);
                 for (int i = 0; i < propCount; ++i)
@@ -153,7 +153,7 @@ namespace HigherLogics.Google.Datastore
             }
             From = (obj, e) =>
             {
-                if (e == null) throw new ArgumentNullException("entity");
+                if (e == null) return default(T);
                 for (var i = 0; i < propCount; ++i)
                     from[i](ref obj, e);
                 return obj;
