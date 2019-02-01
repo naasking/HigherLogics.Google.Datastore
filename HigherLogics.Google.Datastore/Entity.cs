@@ -12,7 +12,6 @@ namespace HigherLogics.Google.Datastore
     /// </summary>
     /// <typeparam name="T"></typeparam>
     static class Entity<T>
-        //where T : class
     {
         /// <summary>
         /// The kind used to find entities in the datastore.

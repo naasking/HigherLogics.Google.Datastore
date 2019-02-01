@@ -33,7 +33,6 @@ namespace MapperTests
 
         [Theory]
         [InlineData((uint)99)]
-        [InlineData((uint)0)]
         [InlineData(uint.MaxValue)]
         [InlineData(uint.MinValue)]
         public static void UInt32(uint i)
@@ -98,6 +97,24 @@ namespace MapperTests
             var now = new DateTimeOffset(DateTime.Now);
             Value e = now;
             Assert.Equal(now, Value<DateTimeOffset>.From(e));
+        }
+
+        [Fact]
+        public static void ValueSame()
+        {
+            var now = new Value();
+            var e = Value<Value>.To(now);
+            Assert.Equal(now, e);
+            Assert.Equal(now, Value<Value>.From(now));
+            Assert.Equal(now, Value<Value>.To(e));
+        }
+
+        [Fact]
+        public static void Key()
+        {
+            var now = Mapper.CreateIncompleteKey<Simple>();
+            var e = Value<Key>.To(now);
+            Assert.Equal(now, e.KeyValue);
         }
 
         [Theory]

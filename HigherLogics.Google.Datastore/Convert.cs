@@ -13,9 +13,6 @@ namespace HigherLogics.Google.Datastore
     {
         public static Value Value(Value x) => x;
 
-        public static Key Key(Value x) => x.KeyValue;
-        public static Value Key(Key x) => x;
-
         public static int Int32(Value x) => (int)x.IntegerValue;
         public static Value Int32(int x) => x;
 

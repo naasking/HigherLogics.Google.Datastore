@@ -36,7 +36,6 @@ namespace HigherLogics.Google.Datastore
 
         /// <inheritdoc />
         public Func<T> Map<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
-            //where T : class
         {
             // read/write entities and values using delegates generated from method-backed properties
             if (typeof(T).GetTypeInfo().IsValueType)
@@ -96,6 +95,8 @@ namespace HigherLogics.Google.Datastore
                         .Invoke(null, new object[] { member.Name, member.GetGetMethod().CreateDelegate(tget) });
                 }
             }
+            //FIXME: should probably remove this check, probably move it to Mapper.cs as precondition to
+            //each insert/lookup/delete op
             if (gk == null || sk == null)
                 throw new MissingMemberException($"{objType.FullName} is missing a property with a [Key] attribute.");
             From = (obj, e) =>
@@ -194,23 +195,5 @@ namespace HigherLogics.Google.Datastore
         static VAction<T, Entity> StructGet<T, TField>(string name, VFunc<T, TField> getter) =>
             (ref T obj, Entity e) => e[name] = Value<TField>.To(getter(ref obj));
         #endregion
-
-        //#region Struct getters/setters
-        ////FUTURE: this may be less efficient than it could be.
-        ////FIXME: duplicate Entity<T>.To/From/Create but for value types. Then we can eliminate
-        ////this map parameter which would recursive reflection calls to MapStruct.
-        //static VAction<T, Entity> SetStructStruct<T, TField>(string name, VAction<T, TField> setter, Func<TField, Entity, TField> map)
-        //    where T : struct
-        //    where TField : struct =>
-        //    (ref T obj, Entity e) => setter(ref obj, map(default(TField), e));
-
-        //static VAction<T, Entity> SetStructClass<T, TField>(string name, VAction<T, TField> setter)
-        //    where T : struct
-        //    where TField : class =>
-        //    (ref T obj, Entity e) => setter(ref obj, Entity<TField>.From(Entity<TField>.Create(), e));
-
-        //static VAction<T, Entity> GetStruct<T, TField>(string name, VFunc<T, TField> getter, Func<Entity, TField, Entity> map) where T : struct =>
-        //    (ref T obj, Entity e) => map(e, getter(ref obj));
-        //#endregion
     }
 }

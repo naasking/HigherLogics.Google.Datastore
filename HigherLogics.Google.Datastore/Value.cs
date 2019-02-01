@@ -72,10 +72,10 @@ namespace HigherLogics.Google.Datastore
             // the default conversions provided by Google's library, then fall back to Google's defaults.
             // This is because searching for a conversion for Byte will return the conversion for Int64.
             to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                                .SingleOrDefault(x => x.Name == type.Name && x.ReturnType == typeof(Value))
+                                .SingleOrDefault(x => x.Name.Equals(type.Name, StringComparison.Ordinal) && x.ReturnType == typeof(Value))
               ?? typeof(Value).GetMethod("op_Implicit", toTypes);
             from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                                  .SingleOrDefault(x => x.ReturnType == type)
+                                  .SingleOrDefault(x => x.ReturnType == type && x.Name.Equals(type.Name, StringComparison.Ordinal))
                 ?? typeof(Value).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                 .SingleOrDefault(x => x.ReturnType == type && "op_Explicit".Equals(x.Name, StringComparison.Ordinal));
         }
