@@ -38,7 +38,7 @@ namespace HigherLogics.Google.Datastore
         public Func<T> Map<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
         {
             // read/write entities and values using delegates generated from method-backed properties
-            if (typeof(T).GetTypeInfo().IsValueType)
+            if (typeof(T).IsValueType)
                 MapStruct<T>(out getKey, out setKey, out From, out To);
             else
                 MapClass<T>(out getKey, out setKey, out From, out To);
@@ -48,8 +48,8 @@ namespace HigherLogics.Google.Datastore
         void MapClass<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
         {
             var objType = typeof(T);
-            var sset = new Func<string, Action<T, int>, Action<Entity, T>>(ClassSet).GetMethodInfo().GetGenericMethodDefinition();
-            var sget = new Func<string, Func<T, int>, Action<T, Entity>>(ClassGet).GetMethodInfo().GetGenericMethodDefinition();
+            var sset = new Func<string, Action<T, int>, Action<Entity, T>>(ClassSet).Method.GetGenericMethodDefinition();
+            var sget = new Func<string, Func<T, int>, Action<T, Entity>>(ClassGet).Method.GetGenericMethodDefinition();
             var oparams = new object[3];
             var gk = getKey = null;
             var sk = setKey = null;
@@ -124,8 +124,8 @@ namespace HigherLogics.Google.Datastore
         void MapStruct<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
         {
             var objType = typeof(T);
-            var sset = new Func<string, VAction<T, int>, VAction<T, Entity>>(StructSet).GetMethodInfo().GetGenericMethodDefinition();
-            var sget = new Func<string, VFunc<T, int>, VAction<T, Entity>>(StructGet).GetMethodInfo().GetGenericMethodDefinition();
+            var sset = new Func<string, VAction<T, int>, VAction<T, Entity>>(StructSet).Method.GetGenericMethodDefinition();
+            var sget = new Func<string, VFunc<T, int>, VAction<T, Entity>>(StructGet).Method.GetGenericMethodDefinition();
             var members = objType.GetProperties();
             var from = new VAction<T, Entity>[members.Length];
             var to = new VAction<T, Entity>[members.Length];

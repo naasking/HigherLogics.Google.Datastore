@@ -209,6 +209,7 @@ namespace MapperTests
             var rt = Entity<IgnoreFields>.From(new IgnoreFields(), e);
             Assert.Equal(x.Id, rt.Id);
             Assert.Null(rt.Data);
+            Assert.Null(e["Data"]);
             Assert.NotEqual(x.Data, rt.Data);
         }
     }
