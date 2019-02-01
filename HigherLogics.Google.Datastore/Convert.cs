@@ -86,10 +86,70 @@ namespace HigherLogics.Google.Datastore
         }
         public static Value ConsoleKeyInfo(ConsoleKeyInfo v) => new Entity
         {
-            [nameof(v.KeyChar)]= Char(v.KeyChar),
+            [nameof(v.KeyChar)] = Char(v.KeyChar),
             [nameof(v.Key)] = Int32((int)v.Key),
             [nameof(v.Modifiers)] = Int32((int)v.Modifiers),
         };
+
+        public static TimeZoneInfo TimeZoneInfo(Value x) =>
+            x == null ? null : System.TimeZoneInfo.FromSerializedString(x.StringValue);
+        public static Value TimeZoneInfo(TimeZoneInfo x) => x?.ToSerializedString();
+
+        public static TimeZoneInfo.AdjustmentRule AdjustmentRule(Value x)
+        {
+            if (x == null) return null;
+            var date = (DateTime)x.EntityValue[nameof(System.TimeZoneInfo.AdjustmentRule.DateStart)];
+            var dateStart = new DateTime(date.Ticks, DateTimeKind.Unspecified);
+            date = (DateTime)x.EntityValue[nameof(System.TimeZoneInfo.AdjustmentRule.DateEnd)];
+            var dateEnd = new DateTime(date.Ticks, DateTimeKind.Unspecified);
+            return System.TimeZoneInfo.AdjustmentRule.CreateAdjustmentRule(
+                dateStart, dateEnd,
+                TimeSpan(x.EntityValue[nameof(System.TimeZoneInfo.AdjustmentRule.DaylightDelta)]),
+                TransitionTime(x.EntityValue[nameof(System.TimeZoneInfo.AdjustmentRule.DaylightTransitionStart)]),
+                TransitionTime(x.EntityValue[nameof(System.TimeZoneInfo.AdjustmentRule.DaylightTransitionEnd)]));
+        }
+        public static Value AdjustmentRule(TimeZoneInfo.AdjustmentRule x) => new Entity
+        {
+            [nameof(x.DateEnd)] = DateTime(x.DateEnd),
+            [nameof(x.DateStart)] = DateTime(x.DateStart),
+            [nameof(x.DaylightDelta)] = TimeSpan(x.DaylightDelta),
+            [nameof(x.DaylightTransitionEnd)] = TransitionTime(x.DaylightTransitionEnd),
+            [nameof(x.DaylightTransitionStart)] = TransitionTime(x.DaylightTransitionStart),
+        };
+
+        public static TimeZoneInfo.TransitionTime TransitionTime(Value v)
+        {
+            if (v == null) return default(TimeZoneInfo.TransitionTime);
+            var e = v.EntityValue;
+            var isFixed = (bool)e[nameof(System.TimeZoneInfo.TransitionTime.IsFixedDateRule)];
+            var timeOfDayUtc = (DateTime)e[nameof(System.TimeZoneInfo.TransitionTime.TimeOfDay)];
+            var timeOfDay = new DateTime(timeOfDayUtc.Ticks, DateTimeKind.Unspecified);
+            var month = Int32(e[nameof(System.TimeZoneInfo.TransitionTime.Month)]);
+            return isFixed
+                ? System.TimeZoneInfo.TransitionTime.CreateFixedDateRule(
+                    timeOfDay, month, Int32(e[nameof(System.TimeZoneInfo.TransitionTime.Day)]))
+                : System.TimeZoneInfo.TransitionTime.CreateFloatingDateRule(
+                    timeOfDay,
+                    month,
+                    Int32(e[nameof(System.TimeZoneInfo.TransitionTime.Week)]),
+                    (DayOfWeek)Int32(e[nameof(System.TimeZoneInfo.TransitionTime.DayOfWeek)]));
+        }
+        public static Value TransitionTime(TimeZoneInfo.TransitionTime v) => v.IsFixedDateRule
+            ? new Entity
+            {
+                [nameof(v.Day)] = Int32(v.Day),
+                [nameof(v.IsFixedDateRule)] = v.IsFixedDateRule,
+                [nameof(v.Month)] = Int32(v.Month),
+                [nameof(v.TimeOfDay)] = v.TimeOfDay,
+            }
+            : new Entity
+            {
+                [nameof(v.DayOfWeek)] = Int32((int)v.DayOfWeek),
+                [nameof(v.IsFixedDateRule)] = v.IsFixedDateRule,
+                [nameof(v.Month)] = Int32(v.Month),
+                [nameof(v.TimeOfDay)] = DateTime(v.TimeOfDay),
+                [nameof(v.Week)] = Int32(v.Week),
+            };
 
         public static System.Type Type(Value x) => x == null ? null : System.Type.GetType(x.StringValue);
         public static Value Type(System.Type x) => x?.AssemblyQualifiedName;

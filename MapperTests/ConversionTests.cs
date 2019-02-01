@@ -438,5 +438,34 @@ namespace MapperTests
             Assert.Null(e);
             Assert.Null(rt);
         }
+
+        [Fact]
+        public static void TimeZoneTest()
+        {
+            var tz = TimeZoneInfo.Local;
+            var e = Value<TimeZoneInfo>.To(tz);
+            var rt = Value<TimeZoneInfo>.From(e);
+            Assert.Equal(tz, rt);
+            Assert.Equal(tz.ToSerializedString(), e.StringValue);
+        }
+
+        [Fact]
+        public static void TimeZoneAdjustmentRuleTest()
+        {
+            var tz = TimeZoneInfo.Local.GetAdjustmentRules()[0];
+            var e = Value<TimeZoneInfo.AdjustmentRule>.To(tz);
+            var rt = Value<TimeZoneInfo.AdjustmentRule>.From(e);
+            Assert.Equal(tz, rt);
+            Assert.NotNull(e.EntityValue);
+        }
+
+        [Fact]
+        public static void TimeZoneTransitionTimeTest()
+        {
+            var tz = TimeZoneInfo.Local.GetAdjustmentRules()[0].DaylightTransitionEnd;
+            var e = Value<TimeZoneInfo.TransitionTime>.To(tz);
+            var rt = Value<TimeZoneInfo.TransitionTime>.From(e);
+            Assert.Equal(tz, rt);
+        }
     }
 }
