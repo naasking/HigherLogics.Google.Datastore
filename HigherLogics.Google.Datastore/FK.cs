@@ -9,7 +9,7 @@ namespace HigherLogics.Google.Datastore
     /// <summary>
     /// A foreign key reference.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The type of entity designated by this reference.</typeparam>
     public sealed class FK<T>
         where T : class
     {
@@ -27,7 +27,7 @@ namespace HigherLogics.Google.Datastore
         /// <param name="readConsistency"></param>
         /// <param name="callSettings"></param>
         /// <returns></returns>
-        public T Lookup(DatastoreDb db, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null) =>
+        public T Get(DatastoreDb db, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null) =>
             value ?? (value = db.Lookup<T>(Key, null, readConsistency, callSettings));
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace HigherLogics.Google.Datastore
         /// <param name="readConsistency"></param>
         /// <param name="callSettings"></param>
         /// <returns></returns>
-        public async Task<T> LookupAsync(DatastoreDb db, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null) =>
+        public async Task<T> GetAsync(DatastoreDb db, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null) =>
             value ?? (value = await db.LookupAsync<T>(Key, null, readConsistency, callSettings));
     }
 }
