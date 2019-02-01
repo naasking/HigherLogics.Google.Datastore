@@ -18,19 +18,7 @@ for small to medium sized projects:
     // returns: { Baz : <some long id>, Bar : "hello world!" }
 
 It uses the standard attributes in the `System.ComponentModel.DataAnnotations`
-namespace to designate the entity keys. At the moment, only Int64 keys
-are supported.
-
-One caveat: this library is intentionally limited to relatively flat
-POCOs, where entities don't contain foreign keys to other entities. Any
-such nested relations will be serialized as embedded entities. Anything
-more starts needing ORM-like features, requiring session-level map
-of keys to/from entities, transparently loading of associations and
-collections, and other features that can drastically impact performance.
-
-So at the moment, associations to foreign entities must be designated
-by a property of type Key as with the usual Datastore API, and they
-must be manually loaded, inserted, etc.
+namespace to designate the entity keys.
 
 # Custom Value Conversions
 
@@ -91,11 +79,22 @@ mapping backend as follows:
 I will probably add a LINQ expression tree mapper at some point in a separate
 assembly.
 
+# Limitations
+
+ * only Int64 keys are currently supported
+ * associations to foreign entities must be designated by a property of type
+   Key as with the usual Datastore API, or the special FK<T> wrapper this library
+   provides, and they must be manually loaded, inserted, etc. Any nested
+   reference or value types will be saved as embedded entities. Supporting
+   proper FK relations starts needing ORM-like features, requiring session-level map
+   of keys to/from entities, transparent loading of associations and
+   collections, and other features that can drastically impact performance
+ * only tuples and value tuples up to 4 arguments are supported out of the box,
+   as any more than that and you should create a class or struct
+
 # Future Work
 
- * only Sytem.Int64 keys are currently supported.
- * support for value types that are inlined into entities
- * all nested entities are embedded, not linked as foreign associations
+ * add support for string keys
  * add something like [EntityField(string name)] to permit customizing the
    entity field names, which will make it easier to integrate with existing
    data
