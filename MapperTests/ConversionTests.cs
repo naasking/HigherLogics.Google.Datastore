@@ -452,20 +452,27 @@ namespace MapperTests
         [Fact]
         public static void TimeZoneAdjustmentRuleTest()
         {
-            var tz = TimeZoneInfo.Local.GetAdjustmentRules()[0];
-            var e = Value<TimeZoneInfo.AdjustmentRule>.To(tz);
-            var rt = Value<TimeZoneInfo.AdjustmentRule>.From(e);
-            Assert.Equal(tz, rt);
-            Assert.NotNull(e.EntityValue);
+            foreach (var tz in TimeZoneInfo.Local.GetAdjustmentRules())
+            {
+                var e = Value<TimeZoneInfo.AdjustmentRule>.To(tz);
+                var rt = Value<TimeZoneInfo.AdjustmentRule>.From(e);
+                Assert.Equal(tz, rt);
+                Assert.NotNull(e.EntityValue);
+            }
         }
 
         [Fact]
         public static void TimeZoneTransitionTimeTest()
         {
-            var tz = TimeZoneInfo.Local.GetAdjustmentRules()[0].DaylightTransitionEnd;
-            var e = Value<TimeZoneInfo.TransitionTime>.To(tz);
-            var rt = Value<TimeZoneInfo.TransitionTime>.From(e);
-            Assert.Equal(tz, rt);
+            foreach (var x in TimeZoneInfo.Local.GetAdjustmentRules())
+            {
+                foreach (var tz in new[] { x.DaylightTransitionStart, x.DaylightTransitionEnd })
+                {
+                    var e = Value<TimeZoneInfo.TransitionTime>.To(tz);
+                    var rt = Value<TimeZoneInfo.TransitionTime>.From(e);
+                    Assert.Equal(tz, rt);
+                }
+            }
         }
     }
 }
