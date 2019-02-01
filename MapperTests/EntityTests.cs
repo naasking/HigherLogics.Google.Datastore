@@ -57,6 +57,7 @@ namespace MapperTests
         [Key]
         public long Id { get; set; }
         public Foo Foo { get; set; }
+        public NestedStruct Next { get; set; }
     }
 
     public static class EntityTests
