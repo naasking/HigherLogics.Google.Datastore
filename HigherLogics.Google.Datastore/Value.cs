@@ -41,7 +41,7 @@ namespace HigherLogics.Google.Datastore
                 PrimitiveMappers(tinfo.IsEnum ? Enum.GetUnderlyingType(type) : type, toTypes, out to, out from);
 
             // If no match succeeds and T is a reference type then treat it like an entity
-            if (to == null && from == null && !tinfo.IsValueType)
+            if (to == null && from == null)
                 EntityMappers(type, toTypes, out to, out from);
 
             if (to != null && from != null)

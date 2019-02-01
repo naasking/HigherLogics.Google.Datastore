@@ -46,7 +46,20 @@ namespace MapperTests
         public Simple[] SimpleList { get; set; }
     }
 
-    public class EntityTests
+    struct Foo
+    {
+        public string Name { get; set; }
+        public Simple Simple { get; set; }
+    }
+
+    class NestedStruct
+    {
+        [Key]
+        public long Id { get; set; }
+        public Foo Foo { get; set; }
+    }
+
+    public static class EntityTests
     {
         [Fact]
         public static void SimpleTests()
@@ -149,6 +162,30 @@ namespace MapperTests
             Assert.Equal(x.Enumerable.Floats, rt.Enumerable.Floats);
             Assert.Equal(x.SimpleList.Select(z => z.Bar), rt.SimpleList.Select(z => z.Bar));
             Assert.Equal(x.SimpleList.Select(z => z.Baz), rt.SimpleList.Select(z => z.Baz));
+        }
+
+        [Fact]
+        public static void NestedStructTests()
+        {
+            var x = new NestedStruct
+            {
+                Id = int.MaxValue / 2,
+                Foo = new Foo
+                {
+                    Name = "Sandro Magi",
+                    Simple = new Simple
+                    {
+                        Bar = 33,
+                        Baz = "hello world!",
+                    }
+                },
+            };
+            var e = Entity<NestedStruct>.To(new Entity(), x);
+            var rt = Entity<NestedStruct>.From(new NestedStruct(), e);
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Equal(x.Foo.Name, rt.Foo.Name);
+            Assert.Equal(x.Foo.Simple.Bar, rt.Foo.Simple.Bar);
+            Assert.Equal(x.Foo.Simple.Baz, rt.Foo.Simple.Baz);
         }
     }
 }
