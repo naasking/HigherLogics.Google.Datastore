@@ -450,6 +450,28 @@ namespace MapperTests
         }
 
         [Fact]
+        public static void TimeZoneUtcTest()
+        {
+            var tz = TimeZoneInfo.Utc;
+            var e = Value<TimeZoneInfo>.To(tz);
+            var rt = Value<TimeZoneInfo>.From(e);
+            Assert.Equal(tz, rt);
+            Assert.Equal(tz.ToSerializedString(), e.StringValue);
+        }
+
+        [Fact]
+        public static void TimeZoneRandTest()
+        {
+            var rand = new Random((int)DateTime.Now.Ticks);
+            var tzs = TimeZoneInfo.GetSystemTimeZones();
+            var tz = tzs[rand.Next() % tzs.Count];
+            var e = Value<TimeZoneInfo>.To(tz);
+            var rt = Value<TimeZoneInfo>.From(e);
+            Assert.Equal(tz, rt);
+            Assert.Equal(tz.ToSerializedString(), e.StringValue);
+        }
+
+        [Fact]
         public static void TimeZoneAdjustmentRuleTest()
         {
             foreach (var tz in TimeZoneInfo.Local.GetAdjustmentRules())
