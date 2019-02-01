@@ -74,6 +74,23 @@ namespace HigherLogics.Google.Datastore
         public static Uri Uri(Value x) => x == null ? null : new System.Uri(x.StringValue);
         public static Value Uri(Uri x) => x?.ToString();
 
+        public static ConsoleKeyInfo ConsoleKeyInfo(Value v)
+        {
+            if (v == null) return default(ConsoleKeyInfo);
+            var mod = (ConsoleModifiers)Int32(v.EntityValue[nameof(System.ConsoleKeyInfo.Modifiers)]);
+            return new ConsoleKeyInfo(Char(v.EntityValue[nameof(System.ConsoleKeyInfo.KeyChar)]),
+                                      (ConsoleKey)Int32(v.EntityValue[nameof(System.ConsoleKeyInfo.Key)]),
+                                      mod.HasFlag(ConsoleModifiers.Shift),
+                                      mod.HasFlag(ConsoleModifiers.Alt),
+                                      mod.HasFlag(ConsoleModifiers.Control));
+        }
+        public static Value ConsoleKeyInfo(ConsoleKeyInfo v) => new Entity
+        {
+            [nameof(v.KeyChar)]= Char(v.KeyChar),
+            [nameof(v.Key)] = Int32((int)v.Key),
+            [nameof(v.Modifiers)] = Int32((int)v.Modifiers),
+        };
+
         public static System.Type Type(Value x) => x == null ? null : System.Type.GetType(x.StringValue);
         public static Value Type(System.Type x) => x?.AssemblyQualifiedName;
 
@@ -95,17 +112,16 @@ namespace HigherLogics.Google.Datastore
 
         public static ArraySegment<T> ArraySegment<T>(Value v) =>
             v == null ? default(ArraySegment<T>):
-                        new ArraySegment<T>(Array<T>(v?.EntityValue["Array"]),
-                                            Int32(v?.EntityValue["Offset"]),
-                                            Int32(v?.EntityValue["Count"]));
+                        new ArraySegment<T>(Array<T>(v.EntityValue[nameof(System.ArraySegment<T>.Array)]),
+                                            Int32(v.EntityValue[nameof(System.ArraySegment<T>.Offset)]),
+                                            Int32(v.EntityValue[nameof(System.ArraySegment<T>.Count)]));
         public static Value ArraySegment<T>(ArraySegment<T> v) =>
-            v.Array == null ? null:
-                              new Entity
-                              {
-                                  ["Array"] = Array<T>(v.Array),
-                                  ["Offset"] = Int32(v.Offset),
-                                  ["Count"] = Int32(v.Count),
-                              };
+            v.Array == null ? null: new Entity
+            {
+                [nameof(v.Array)] = Array<T>(v.Array),
+                [nameof(v.Offset)] = Int32(v.Offset),
+                [nameof(v.Count)] = Int32(v.Count),
+            };
 
         public static T EntityValue<T>(Value v) =>
             v == null ? default(T) : Entity<T>.From(Entity<T>.Create(), v.EntityValue);
