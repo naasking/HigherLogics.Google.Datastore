@@ -128,6 +128,29 @@ namespace MapperTests
             Assert.Equal(x.Foo.Simple.Baz, rt.Foo.Simple.Baz);
         }
 
+        [Fact]
+        public static void FKTest()
+        {
+            var s = new Simple
+            {
+                Baz = "hello world!",
+            };
+            var x = new FKClass
+            {
+                Simple = new FK<Simple>(s),
+            };
+            var db = Open();
+            var skey = db.Insert(s);
+            Assert.Equal(s.Bar, skey.Id());
+
+            var xkey = db.Insert(x);
+            var rt = db.Lookup(xkey, new FKClass());
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Equal(x.Simple.Key.Id(), rt.Simple.Key.Id());
+            var rts = rt.Simple.Get(db);
+            Assert.Equal(s.Baz, rts.Baz);
+        }
+
         //[Fact]
         //public static void NestedKey()
         //{

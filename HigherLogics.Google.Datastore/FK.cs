@@ -14,11 +14,36 @@ namespace HigherLogics.Google.Datastore
         where T : class
     {
         T value;
+        Key key;
+
+        /// <summary>
+        /// Construct a new foreign key reference.
+        /// </summary>
+        /// <param name="key">The foreign entity's key.</param>
+        public FK(Key key)
+        {
+            this.Key = key ?? throw new ArgumentNullException(nameof(key));
+        }
+
+        /// <summary>
+        /// Construct a new foreign key reference.
+        /// </summary>
+        /// <param name="key">The foreign entity's key.</param>
+        public FK(T value)
+        {
+            if (Entity<T>.GetKey == null)
+                throw new InvalidOperationException($"Type {typeof(T).Name} does not have a property decorated with [Key].");
+            this.value = value;
+        }
 
         /// <summary>
         /// The key that designates the entity.
         /// </summary>
-        public Key Key { get; private set; }
+        public Key Key
+        {
+            get => key ?? Entity<T>.GetKey(value);
+            private set => key = value;
+        }
 
         /// <summary>
         /// Lookup the designated reference.

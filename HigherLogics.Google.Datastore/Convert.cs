@@ -13,6 +13,9 @@ namespace HigherLogics.Google.Datastore
     {
         public static Value Value(Value x) => x;
 
+        public static FK<T> FK<T>(Value x) where T : class => new FK<T>(x.KeyValue);
+        public static Value FK<T>(FK<T> x) where T : class => x.Key;
+
         public static int Int32(Value x) => (int)x.IntegerValue;
         public static Value Int32(int x) => x;
 

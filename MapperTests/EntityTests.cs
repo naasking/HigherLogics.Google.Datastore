@@ -68,6 +68,13 @@ namespace MapperTests
         public string Data { get; set; }
     }
 
+    class FKClass
+    {
+        [Key]
+        public long Id { get; set; }
+        public FK<Simple> Simple { get; set; }
+    }
+
     public static class EntityTests
     {
         [Fact]
@@ -211,6 +218,24 @@ namespace MapperTests
             Assert.Null(rt.Data);
             Assert.Null(e["Data"]);
             Assert.NotEqual(x.Data, rt.Data);
+        }
+
+        [Fact]
+        public static void FKTest()
+        {
+            var x = new FKClass
+            {
+                Id = int.MaxValue / 2,
+                Simple = new FK<Simple>(new Simple
+                {
+                    Bar = 33,
+                    Baz = "hello world!",
+                }),
+            };
+            var e = Entity<FKClass>.To(new Entity(), x);
+            var rt = Entity<FKClass>.From(new FKClass(), e);
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Equal(x.Simple.Key, rt.Simple.Key);
         }
     }
 }
