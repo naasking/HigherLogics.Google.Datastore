@@ -93,6 +93,20 @@ namespace HigherLogics.Google.Datastore
             v?.ArrayValue.Values.Select(Value<T>.From).ToArray();
         public static Value Array<T>(T[] v) => v?.Select(Value<T>.To).ToArray();
 
+        public static ArraySegment<T> ArraySegment<T>(Value v) =>
+            v == null ? default(ArraySegment<T>):
+                        new ArraySegment<T>(Array<T>(v?.EntityValue["Array"]),
+                                            Int32(v?.EntityValue["Offset"]),
+                                            Int32(v?.EntityValue["Count"]));
+        public static Value ArraySegment<T>(ArraySegment<T> v) =>
+            v.Array == null ? null:
+                              new Entity
+                              {
+                                  ["Array"] = Array<T>(v.Array),
+                                  ["Offset"] = Int32(v.Offset),
+                                  ["Count"] = Int32(v.Count),
+                              };
+
         public static T EntityValue<T>(Value v) =>
             v == null ? default(T) : Entity<T>.From(Entity<T>.Create(), v.EntityValue);
         public static Value EntityValue<T>(T v) =>

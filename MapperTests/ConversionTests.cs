@@ -233,6 +233,15 @@ namespace MapperTests
         }
 
         [Fact]
+        public static void IntArraySegment()
+        {
+            var a = new[] { 0, int.MinValue, int.MaxValue, 99 };
+            var x = new ArraySegment<int>(a, 1, 2);
+            var v = Value<ArraySegment<int>>.To(x);
+            Assert.Equal(x, Value<ArraySegment<int>>.From(v));
+        }
+
+        [Fact]
         public static void StringArrays()
         {
             var x = new[] { "hello", "world", "!", };

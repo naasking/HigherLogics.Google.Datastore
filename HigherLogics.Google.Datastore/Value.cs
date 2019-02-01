@@ -40,8 +40,9 @@ namespace HigherLogics.Google.Datastore
             else
                 PrimitiveMappers(tinfo.IsEnum ? Enum.GetUnderlyingType(type) : type, toTypes, out to, out from);
 
-            // If no match succeeds and T is a reference type then treat it like an entity
-            if (to == null && from == null)
+            // If no match succeeds, treat it like an entity unless it's a struct under System namespace
+            // which should all be handled by the built-in conversions
+            if (to == null && from == null && !type.Namespace.Equals("System", StringComparison.Ordinal))
                 EntityMappers(type, toTypes, out to, out from);
 
             if (to != null && from != null)
