@@ -30,7 +30,6 @@ namespace HigherLogics.Google.Datastore
         {
             //FUTURE: maybe specially tuples and value tuples?
             var type = typeof(T);
-            var tinfo = type.GetTypeInfo();
             var toTypes = new[] { type };
             MethodInfo to, from;
             if (type.IsArray)
@@ -38,7 +37,7 @@ namespace HigherLogics.Google.Datastore
             else if (type.IsConstructedGenericType)
                 GenericMappers(type, toTypes, out to, out from);
             else
-                PrimitiveMappers(tinfo.IsEnum ? Enum.GetUnderlyingType(type) : type, toTypes, out to, out from);
+                PrimitiveMappers(type.IsEnum ? Enum.GetUnderlyingType(type) : type, toTypes, out to, out from);
 
             // If no match succeeds, treat it like an entity unless it's a struct under System namespace
             // which should all be handled by the built-in conversions
@@ -73,7 +72,7 @@ namespace HigherLogics.Google.Datastore
             // the default conversions provided by Google's library, then fall back to Google's defaults.
             // This is because searching for a conversion for Byte will return the conversion for Int64.
             to = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                                .SingleOrDefault(x => x.Name.Equals(type.Name, StringComparison.Ordinal) && x.ReturnType == typeof(Value))
+                                .SingleOrDefault(x => x.Name.Equals(type.Name, StringComparison.Ordinal) && x.ReturnType == typeof(Value) && x.GetParameters()[0].ParameterType.IsAssignableFrom(type))
               ?? typeof(Value).GetMethod("op_Implicit", toTypes);
             from = typeof(Convert).GetMethods(BindingFlags.Static | BindingFlags.Public)
                                   .SingleOrDefault(x => x.ReturnType == type && x.Name.Equals(type.Name, StringComparison.Ordinal))
