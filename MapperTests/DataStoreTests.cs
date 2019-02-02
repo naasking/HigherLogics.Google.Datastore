@@ -3,7 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 using Google.Cloud.Datastore.V1;
 using Grpc.Core;
 using Xunit;
@@ -118,6 +118,7 @@ namespace MapperTests
             //Assert.True(rt.SimpleList.All(z => z.Bar != 0));
         }
 
+        
         [Fact]
         public static void NestedStructTests()
         {
@@ -179,25 +180,53 @@ namespace MapperTests
             Assert.Equal(rt.Simple.Value.Bar, rt2.Simple.Get(db).Bar);
         }
 
-        //[Fact]
-        //public static void NestedKey()
-        //{
-        //    var e = new Entity()
-        //    {
-        //        Key = Mapper.CreateIncompleteKey<Simple>(),
-        //        ["Foo"] = new Entity()
-        //        {
-        //            Key = Mapper.CreateIncompleteKey<Simple>(),
-        //        },
-        //    };
-        //    var db = Open();
-        //    var xkey = db.Insert(e);
-        //    var rt = db.Lookup(xkey);
-        //    Assert.Equal(e.Key.Id(), rt.Key.Id());
-        //    Assert.Equal(e.Key, rt.Key);
-        //    Assert.NotEqual(0, e.Key.Id());
-        //    Assert.Equal(0, e["Foo"].EntityValue.Key.Id());
-        //    Assert.Equal(0, rt["Foo"].EntityValue.Key.Id());
-        //}
+        class BulkTest
+        {
+            [Key]
+            public long Id { get; set; }
+            public FK<Simple> Simple { get; set; }
+            public List<FK<Simple>> List { get; set; }
+        }
+
+        [Fact]
+        public static void BulkTests()
+        {
+            var x = new BulkTest
+            {
+                Simple = new FK<Simple>(new Simple
+                {
+                    Baz = "first direct simple ref",
+                }),
+                List = new List<FK<Simple>>
+                {
+                    new FK<Simple>(new Simple{ Baz = "Index 0"}),
+                    new FK<Simple>(new Simple{ Baz = "Index 1"}),
+                    new FK<Simple>(new Simple{ Baz = "Index 2"}),
+                },
+            };
+            var db = Open();
+            var xsimple = db.Upsert(x.Simple.Value);
+            Assert.NotNull(xsimple);
+            Assert.NotEqual(0, x.Simple.Value.Bar);
+            var xlist = db.Insert(x.List.Select(z => z.Value));
+            Assert.NotNull(xlist);
+            Assert.NotEmpty(xlist);
+            Assert.True(x.List.All(z => 0 != z.Value.Bar));
+            var xkey = db.Upsert(x);
+            Assert.NotNull(xkey);
+
+            var rt = db.Lookup(xkey, new BulkTest());
+            Assert.NotNull(rt.Simple.Key);
+            var rtsimple = rt.Simple.Get(db);
+            Assert.Equal(x.Simple.Value.Bar, rt.Simple.Value.Bar);
+            Assert.Equal(x.Simple.Value.Baz, rt.Simple.Value.Baz);
+            var rtlist = db.Lookup<Simple>(rt.List.Select(z => z.Key));
+            Assert.True(x.List.Select((z, i) => z.Value.Bar == rtlist[i].Bar && z.Value.Baz == rtlist[i].Baz).All(z => z));
+            rt.List.Select(z => z.Get(db)).ToList();
+
+            db.Delete(x.List.Select(z => z.Value));
+            var rt2list = db.Lookup<Simple>(rt.List.Select(z => z.Key));
+            Assert.True(rt2list.Select(z => z == null).All(z => z));
+        }
     }
 }
