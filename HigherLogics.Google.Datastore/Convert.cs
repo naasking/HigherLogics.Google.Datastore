@@ -3,7 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Google.Cloud.Datastore.V1;
+using System.Numerics;
 using G = Google.Type;
+using D = System.Drawing;
+using X = System.Text;
 
 namespace HigherLogics.Google.Datastore
 {
@@ -12,6 +15,12 @@ namespace HigherLogics.Google.Datastore
     /// </summary>
     static class Convert
     {
+        static Convert()
+        {
+            // load this manually because it conflicts with other Color overload
+            Mapper.Convert(x => D.Color.FromArgb(Int32(x)), x => x.ToArgb());
+        }
+
         public static Value Value(Value x) => x;
 
         public static FK<T> FK<T>(Value x) where T : class => new FK<T>(x.KeyValue);
@@ -192,21 +201,35 @@ namespace HigherLogics.Google.Datastore
         public static Value EntityValue<T>(T v) =>
             v == null ? null : Entity<T>.To(new Entity(), v);
 
-        #region Collection conversions
+        #region System.Collections.Generic conversions
 
         public static IEnumerable<T> IEnumerable<T>(Value v) =>
             v?.ArrayValue.Values.Select(Value<T>.From);
         public static Value IEnumerable<T>(IEnumerable<T> v) =>
             v?.Select(Value<T>.To).ToArray();
 
-        public static List<T> List<T>(Value v) =>
-            v?.ArrayValue.Values.Select(Value<T>.From).ToList();
-        public static Value List<T>(List<T> v) =>
-            v?.Select(Value<T>.To).ToArray();
-
         public static IList<T> IList<T>(Value v) =>
             v?.ArrayValue.Values.Select(Value<T>.From).ToList();
         public static Value IList<T>(IList<T> v) =>
+            IEnumerable(v);
+
+        public static IReadOnlyList<T> IReadOnlyList<T>(Value v) =>
+            List<T>(v).AsReadOnly();
+        public static Value IReadOnlyList<T>(IReadOnlyList<T> v) =>
+            IEnumerable(v);
+
+        public static IReadOnlyCollection<T> IReadOnlyCollection<T>(Value v) =>
+            List<T>(v).AsReadOnly();
+        public static Value IReadOnlyCollection<T>(IReadOnlyCollection<T> v) =>
+            IEnumerable(v);
+
+        //FIXME: not clear whether to add ICollection<T>, IReadOnlyDictionary<T0, T1> or ISet<T>.
+        //These interfaces either support mutation, or don't expose the sorting order. For instance,
+        //they could be sorted or hashed, but order might matter for the application.
+
+        public static List<T> List<T>(Value v) =>
+            v?.ArrayValue.Values.Select(Value<T>.From).ToList();
+        public static Value List<T>(List<T> v) =>
             v?.Select(Value<T>.To).ToArray();
 
         public static KeyValuePair<TKey, TValue> KeyValuePair<TKey, TValue>(Value v)
@@ -225,8 +248,97 @@ namespace HigherLogics.Google.Datastore
         public static Value Dictionary<TKey, TValue>(Dictionary<TKey, TValue> v) =>
             v?.Select(Value<KeyValuePair<TKey, TValue>>.To).ToArray();
 
-        //FIXME: add stack, set, queue, all collections under System.Collections.Generic? Or figure out
-        //a way to dispatch to the underlying interfaces
+        public static Queue<T> Queue<T>(Value v)
+        {
+            var a = v?.ArrayValue.Values;
+            if (a == null)
+                return null;
+            var q = new Queue<T>();
+            foreach (var x in a)
+                q.Enqueue(Value<T>.From(x));
+            return q;
+        }
+        public static Value Queue<T>(Queue<T> v) => IEnumerable(v);
+
+        public static Stack<T> Stack<T>(Value v)
+        {
+            var a = v?.ArrayValue.Values;
+            if (a == null)
+                return null;
+            var q = new Stack<T>();
+            for(int i = a.Count - 1; i >= 0; --i)
+                q.Push(Value<T>.From(a[i]));
+            return q;
+        }
+        public static Value Stack<T>(Stack<T> v) => IEnumerable(v);
+
+        public static HashSet<T> HashSet<T>(Value v)
+        {
+            var a = v?.ArrayValue.Values;
+            if (a == null)
+                return null;
+            var q = new HashSet<T>();
+            foreach (var x in a)
+                q.Add(Value<T>.From(x));
+            return q;
+        }
+        public static Value HashSet<T>(HashSet<T> v) => IEnumerable(v);
+
+        public static SortedSet<T> SortedSet<T>(Value v)
+        {
+            var a = v?.ArrayValue.Values;
+            if (a == null)
+                return null;
+            var q = new SortedSet<T>();
+            foreach (var x in a)
+                q.Add(Value<T>.From(x));
+            return q;
+        }
+        public static Value SortedSet<T>(SortedSet<T> v) => IEnumerable(v);
+
+        public static LinkedList<T> LinkedList<T>(Value v)
+        {
+            var a = v?.ArrayValue.Values;
+            if (a == null)
+                return null;
+            var q = new LinkedList<T>();
+            foreach (var x in a)
+                q.AddLast(Value<T>.From(x));
+            return q;
+        }
+        public static Value LinkedList<T>(LinkedList<T> v) => IEnumerable(v);
+
+        public static SortedDictionary<TKey, TValue> SortedDictionary<TKey, TValue>(Value v)
+        {
+            var a = v?.ArrayValue.Values;
+            if (a == null)
+                return null;
+            var q = new SortedDictionary<TKey, TValue>();
+            foreach (var x in a)
+            {
+                var kv = Value<KeyValuePair<TKey, TValue>>.From(x);
+                q.Add(kv.Key, kv.Value);
+            }
+            return q;
+        }
+        public static Value SortedDictionary<TKey, TValue>(SortedDictionary<TKey, TValue> v) =>
+            v?.Select(Value<KeyValuePair<TKey, TValue>>.To).ToArray();
+
+        public static SortedList<TKey, TValue> SortedList<TKey, TValue>(Value v)
+        {
+            var a = v?.ArrayValue.Values;
+            if (a == null)
+                return null;
+            var q = new SortedList<TKey, TValue>();
+            foreach (var x in a)
+            {
+                var kv = Value<KeyValuePair<TKey, TValue>>.From(x);
+                q.Add(kv.Key, kv.Value);
+            }
+            return q;
+        }
+        public static Value SortedList<TKey, TValue>(SortedList<TKey, TValue> v) =>
+            v?.Select(Value<KeyValuePair<TKey, TValue>>.To).ToArray();
 
         #endregion
 
@@ -403,6 +515,101 @@ namespace HigherLogics.Google.Datastore
             [nameof(x.Seconds)] = Int32(x.Seconds),
             [nameof(x.Nanos)] = Int32(x.Nanos),
         };
+
+        #endregion
+
+        #region System.Drawing conversions
+
+        //public static D.Color Color(Value x) => D.Color.FromArgb(Int32(x));
+        //public static Value Color(D.Color x) => Int32(x.ToArgb());
+
+        public static D.Point Point(Value x) => new D.Point(
+            Int32(x.EntityValue[nameof(D.Point.X)]),
+            Int32(x.EntityValue[nameof(D.Point.Y)]));
+        public static Value Point(D.Point x) => new Entity
+        {
+            [nameof(x.X)] = x.X,
+            [nameof(x.Y)] = x.Y,
+        };
+
+        public static D.PointF PointF(Value x) => new D.PointF(
+            Single(x.EntityValue[nameof(D.PointF.X)]),
+            Single(x.EntityValue[nameof(D.PointF.Y)]));
+        public static Value PointF(D.PointF x) => new Entity
+        {
+            [nameof(x.X)] = Single(x.X),
+            [nameof(x.Y)] = Single(x.Y),
+        };
+
+        public static D.Size Size(Value x) => new D.Size(
+            Int32(x.EntityValue[nameof(D.Size.Height)]),
+            Int32(x.EntityValue[nameof(D.Size.Width)]));
+        public static Value Size(D.Size x) => new Entity
+        {
+            [nameof(x.Height)] = Int32(x.Height),
+            [nameof(x.Width)] = Int32(x.Width),
+        };
+
+        public static D.SizeF SizeF(Value x) => new D.SizeF(
+            Single(x.EntityValue[nameof(D.SizeF.Height)]),
+            Single(x.EntityValue[nameof(D.SizeF.Width)]));
+        public static Value SizeF(D.SizeF x) => new Entity
+        {
+            [nameof(x.Height)] = Single(x.Height),
+            [nameof(x.Width)] = Single(x.Width),
+        };
+
+        public static D.Rectangle Rectangle(Value x) => new D.Rectangle(
+            Int32(x.EntityValue[nameof(D.Rectangle.X)]),
+            Int32(x.EntityValue[nameof(D.Rectangle.Y)]),
+            Int32(x.EntityValue[nameof(D.Rectangle.Width)]),
+            Int32(x.EntityValue[nameof(D.Rectangle.Height)]));
+        public static Value Rectangle(D.Rectangle x) => new Entity
+        {
+            [nameof(x.X)] = Int32(x.X),
+            [nameof(x.Y)] = Int32(x.Y),
+            [nameof(x.Width)] = Int32(x.Width),
+            [nameof(x.Height)] = Int32(x.Height),
+        };
+
+        public static D.RectangleF RectangleF(Value x) => new D.RectangleF(
+            Single(x.EntityValue[nameof(D.RectangleF.X)]),
+            Single(x.EntityValue[nameof(D.RectangleF.Y)]),
+            Single(x.EntityValue[nameof(D.RectangleF.Width)]),
+            Single(x.EntityValue[nameof(D.RectangleF.Height)]));
+        public static Value RectangleF(D.RectangleF x) => new Entity
+        {
+            [nameof(x.X)] = Single(x.X),
+            [nameof(x.Y)] = Single(x.Y),
+            [nameof(x.Width)] = Single(x.Width),
+            [nameof(x.Height)] = Single(x.Height),
+        };
+
+        #endregion
+
+        #region System.Numerics
+        public static BigInteger BigInteger(Value x) => System.Numerics.BigInteger.Parse(String(x));
+        public static Value BigInteger(BigInteger x) => x.ToString();
+
+        public static Complex Complex(Value x) => new System.Numerics.Complex(
+            x.EntityValue[nameof(System.Numerics.Complex.Real)].DoubleValue,
+            x.EntityValue[nameof(System.Numerics.Complex.Imaginary)].DoubleValue);
+        public static Value Complex(Complex x) => new Entity
+        {
+            [nameof(x.Real)] = x.Real,
+            [nameof(x.Imaginary)] = x.Imaginary,
+        };
+        #endregion
+
+        #region System.Text
+
+        public static X.StringBuilder StringBuilder(Value x) =>
+            x == null ? null : new X.StringBuilder(x.StringValue ?? "");
+        public static Value StringBuilder(X.StringBuilder x) => x?.ToString();
+
+        public static X.Encoding Encoding(Value x) =>
+            x == null ? null : X.Encoding.GetEncoding(Int32(x));
+        public static Value Encoding(X.Encoding x) => x.ToString();
 
         #endregion
     }

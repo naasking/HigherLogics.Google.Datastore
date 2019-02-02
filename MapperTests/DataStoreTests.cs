@@ -17,9 +17,7 @@ namespace MapperTests
         const int emulatorPort = 8081;
         const string projectId = "mappertests";
         const string namespaceId = "";
-
-        //FIXME: test upserts
-
+        
         static DatastoreDb Open()
         {
             var client = DatastoreClient.Create(new Channel(emulatorHost, emulatorPort, ChannelCredentials.Insecure));
