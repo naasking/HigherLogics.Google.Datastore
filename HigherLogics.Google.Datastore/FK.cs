@@ -10,7 +10,7 @@ namespace HigherLogics.Google.Datastore
     /// A foreign key reference.
     /// </summary>
     /// <typeparam name="T">The type of entity designated by this reference.</typeparam>
-    public sealed class FK<T>
+    public sealed class FK<T> : IEquatable<FK<T>>
         where T : class
     {
         T value;
@@ -35,6 +35,16 @@ namespace HigherLogics.Google.Datastore
                 throw new ArgumentException($"Type {typeof(T).Name} does not have a property decorated with [Key].");
             this.value = value;
         }
+
+        /// <summary>
+        /// Compare the FK for equality.
+        /// </summary>
+        /// <param name="other">The other key to compare against.</param>
+        /// <returns>True if the foreign references are equal, false otherwise.</returns>
+        public bool Equals(FK<T> other) =>
+            ReferenceEquals(this, other) ||
+            key != null && (key == other.key || key.Id() == other.key?.Id() && key.Id() != 0) ||
+            value != null && EqualityComparer<T>.Default.Equals(value, other.value);
 
         /// <summary>
         /// The key that designates the entity.

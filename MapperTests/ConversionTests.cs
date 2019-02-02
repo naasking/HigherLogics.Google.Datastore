@@ -117,6 +117,26 @@ namespace MapperTests
             Assert.Equal(now, e.KeyValue);
         }
 
+        [Fact]
+        public static void FKEquality()
+        {
+            var fk1 = new FK<Simple>(Mapper.CreateIncompleteKey<Simple>());
+            var fk2 = new FK<Simple>(Mapper.CreateIncompleteKey<Simple>());
+            var fk3 = new FK<Simple>(fk1.Key);
+            var fk4 = new FK<Simple>(new Simple { Baz = "Baz" });
+            var fk5 = new FK<Simple>(new Simple { Baz = "Hello" });
+            var fk6 = new FK<Simple>(fk4.Value);
+            Assert.Equal(fk1, fk3);
+            Assert.NotEqual(fk1, fk2);
+            Assert.NotEqual(fk3, fk2);
+            Assert.NotEqual(fk1, fk4);
+            Assert.NotEqual(fk2, fk4);
+            Assert.NotEqual(fk3, fk4);
+            Assert.NotEqual(fk5, fk4);
+            Assert.NotEqual(fk5, fk6);
+            Assert.Equal(fk4, fk6);
+        }
+
         [Theory]
         [InlineData(double.MaxValue)]
         [InlineData(double.MinValue)]
