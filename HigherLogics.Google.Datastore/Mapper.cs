@@ -72,7 +72,7 @@ namespace HigherLogics.Google.Datastore
         /// </summary>
         /// <param name="key">The entity key.</param>
         /// <returns>The Int64 identifier for the given key.</returns>
-        public static long Id(this Key key) => key.Path.First().Id;
+        public static long Id(this Key key) => key.Path[0].Id;
 
         /// <summary>
         /// Convert an Int64 to a Key.
