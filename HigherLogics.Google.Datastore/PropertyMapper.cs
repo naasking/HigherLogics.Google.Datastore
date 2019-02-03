@@ -63,22 +63,26 @@ namespace HigherLogics.Google.Datastore
                 // extract delegates from Value<TProperty>.From/To for each member of T
                 if (member.GetCustomAttribute<KeyAttribute>() != null)
                 {
-                    //FIXME: I think API supports string keys
-                    if (member.PropertyType != typeof(long))
-                        throw new NotSupportedException($"{member.PropertyType} is not a supported key type. Supported types are: System.Int64.");
                     if (gk != null)
                         throw new NotSupportedException($"Duplicate [Key] property {member.DeclaringType}.{member.Name}");
-                    var kparams = new object[1];
-                    kparams[0] = member.GetSetMethod()?.CreateDelegate(typeof(Action<,>).MakeGenericType(objType, typeof(long)));
-                    sk = setKey = (Action<T, Key>)typeof(PropertyMapper)
-                        .GetMethod(nameof(SetKey), BindingFlags.Static | BindingFlags.NonPublic)
-                        .MakeGenericMethod(objType)
-                        .Invoke(null, kparams);
-                    kparams[0] = member.GetGetMethod()?.CreateDelegate(typeof(Func<,>).MakeGenericType(objType, typeof(long)));
-                    gk = getKey = (Func<T, Key>)typeof(PropertyMapper)
-                        .GetMethod(nameof(GetKey), BindingFlags.Static | BindingFlags.NonPublic)
-                        .MakeGenericMethod(objType)
-                        .Invoke(null, kparams);
+                    var setter = member.SetMethod?.CreateDelegate(typeof(Action<,>).MakeGenericType(objType, member.PropertyType));
+                    var getter = member.GetMethod?.CreateDelegate(typeof(Func<,>).MakeGenericType(objType, member.PropertyType));
+
+                    // API supports string and long keys
+                    if (member.PropertyType == typeof(long))
+                    {
+                        sk = setKey = SetLongKey<T>((Action<T, long>)setter);
+                        gk = getKey = GetLongKey<T>((Func<T, long>)getter);
+                    }
+                    else if (member.PropertyType == typeof(string))
+                    {
+                        sk = setKey = SetStringKey<T>((Action<T, string>)setter);
+                        gk = getKey = GetStringKey<T>((Func<T, string>)getter);
+                    }
+                    else
+                    {
+                        throw new NotSupportedException($"{member.PropertyType} is not a supported key type. Supported types are: System.Int64, System.String.");
+                    }
                 }
                 else if (member.GetCustomAttribute<IgnoreDatastoreAttributeAttribute>() == null)
                 {
@@ -98,13 +102,13 @@ namespace HigherLogics.Google.Datastore
             //FIXME: should probably remove this check, probably move it to Mapper.cs as precondition to
             //each insert/lookup/delete op
             if (gk == null || sk == null)
-                throw new MissingMemberException($"{objType.FullName} is missing a property with a [Key] attribute.");
+                throw new MissingMemberException($"{objType.FullName} is missing a get/set property with a [Key] attribute.");
             From = (obj, e) =>
             {
                 if (obj == null) throw new ArgumentNullException("entity");
                 if (e == null) return default(T);
                 //FIXME: should require non-null keys? Probably not since this will be extended for structs.
-                sk(obj, e.Key);
+                sk?.Invoke(obj, e.Key);
                 for (int i = 0; i < propCount; ++i)
                     from[i](e, obj);
                 return obj;
@@ -168,21 +172,38 @@ namespace HigherLogics.Google.Datastore
         }
 
         #region Key getters/setters
-        static Func<T, Key> GetKey<T>(Func<T, long> getKey) where T : class
+        static Func<T, Key> GetLongKey<T>(Func<T, long> getKey)
         {
             if (getKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a getter with a [Key] attribute.");
             return (obj) =>
             {
                 var id = getKey(obj);
-                return id == 0 ? Mapper.CreateIncompleteKey<T>():
-                                 id.ToKey<T>();
+                return id == 0 ? new Key().WithElement(new Key.Types.PathElement { Kind = Entity<T>.Kind }):
+                                 new Key().WithElement(Entity<T>.Kind, id);
             };
         }
 
-        static Action<T, Key> SetKey<T>(Action<T, long> setKey) where T : class
+        static Func<T, Key> GetStringKey<T>(Func<T, string> getKey)
+        {
+            if (getKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a getter with a [Key] attribute.");
+            return (obj) =>
+            {
+                var id = getKey(obj);
+                if (id == null) throw new ArgumentNullException($"{typeof(T).FullName} [Key] property is a string and must not be null.", getKey.Method.Name.Substring(4));
+                return new Key().WithElement(Entity<T>.Kind, id);
+            };
+        }
+
+        static Action<T, Key> SetLongKey<T>(Action<T, long> setKey)
         {
             if (setKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a setter with a [Key] attribute.");
             return (obj, key) => setKey(obj, key.Id());
+        }
+
+        static Action<T, Key> SetStringKey<T>(Action<T, string> setKey)
+        {
+            if (setKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a setter with a [Key] attribute.");
+            return (obj, key) => setKey(obj, key.Name());
         }
         #endregion
 

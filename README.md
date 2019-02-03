@@ -81,7 +81,6 @@ assembly.
 
 # Limitations
 
- * only Int64 keys are currently supported
  * associations to foreign entities must be designated by a property of type
    Key as with the usual Datastore API, or the special FK<T> wrapper this library
    provides, and they must be manually loaded, inserted, etc. Any nested
@@ -94,7 +93,7 @@ assembly.
 
 # Future Work
 
- * add support for string keys
+ * support Key properties as a [Key]
  * add something like [EntityField(string name)] to permit customizing the
    entity field names, which will make it easier to integrate with existing
    data

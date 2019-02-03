@@ -89,6 +89,13 @@ namespace MapperTests
         public TimeOfDay TimeOfDay { get; set; }
     }
 
+    class StringKey
+    {
+        [Key]
+        public string Id { get; set; }
+        public float E { get; set; }
+    }
+
     public static class EntityTests
     {
         [Fact]
@@ -254,6 +261,20 @@ namespace MapperTests
             var rt = Entity<FKClass>.From(new FKClass(), e);
             Assert.Equal(x.Id, rt.Id);
             Assert.Equal(x.Simple.Key, rt.Simple.Key);
+        }
+
+        [Fact]
+        public static void StringKeyTest()
+        {
+            var x = new StringKey
+            {
+                Id = "Hello world!",
+                E = float.Epsilon,
+            };
+            var e = Entity<StringKey>.To(new Entity(), x);
+            var rt = Entity<StringKey>.From(new StringKey(), e);
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Equal(x.E, rt.E);
         }
 
         [Fact]

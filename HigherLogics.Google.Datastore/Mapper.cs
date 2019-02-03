@@ -75,6 +75,13 @@ namespace HigherLogics.Google.Datastore
         public static long Id(this Key key) => key.Path[0].Id;
 
         /// <summary>
+        /// Extract the key identifier.
+        /// </summary>
+        /// <param name="key">The entity key.</param>
+        /// <returns>The Int64 identifier for the given key.</returns>
+        public static string Name(this Key key) => key.Path[0].Name;
+
+        /// <summary>
         /// Convert an Int64 to a Key.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
@@ -84,19 +91,37 @@ namespace HigherLogics.Google.Datastore
             new Key().WithElement(Kind<T>(), id);
 
         /// <summary>
+        /// Convert an string to a Key.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="name">The entity identifier.</param>
+        /// <returns>A key for the given identifier.</returns>
+        public static Key ToKey<T>(this string name) where T : class =>
+            new Key().WithElement(Kind<T>(), name);
+
+        /// <summary>
         /// Create an incomplete key for a given type.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <returns></returns>
         public static Key CreateIncompleteKey<T>() where T : class =>
             new Key().WithElement(new Key.Types.PathElement { Kind = Mapper.Kind<T>() });
+
+        /// <summary>
+        /// Generate a key for the entity.
+        /// </summary>
+        /// <typeparam name="T">The type of entity.</typeparam>
+        /// <param name="obj">The entity instance.</param>
+        /// <returns>A key for the given entity.</returns>
+        public static Key GetKey<T>(this T obj) where T : class =>
+            Entity<T>.GetKey(obj);
         #endregion
 
         #region Internal key initializers
         static Key Init<T>(T obj, Key key)
             where T : class
         {
-            if (key != null)
+            if (key != null && Entity<T>.SetKey != null)
                 Entity<T>.SetKey(obj, key);
             return key;
         }
@@ -104,9 +129,12 @@ namespace HigherLogics.Google.Datastore
         static IReadOnlyList<Key> Init<T>(IEnumerable<T> objs, IReadOnlyList<Key> keys)
             where T : class
         {
-            var i = 0;
-            foreach (var obj in objs)
-                Entity<T>.SetKey(obj, keys[i++]);
+            if (Entity<T>.SetKey != null)
+            {
+                var i = 0;
+                foreach (var obj in objs)
+                    Entity<T>.SetKey(obj, keys[i++]);
+            }
             return keys;
         }
         #endregion
