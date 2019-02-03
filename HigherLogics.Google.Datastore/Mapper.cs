@@ -111,6 +111,36 @@ namespace HigherLogics.Google.Datastore
         }
         #endregion
 
+        #region Pre-allocate ids
+        /// <summary>
+        /// Pre-allocate the id to use.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="obj">The entity to update. Must not be null.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        public static void AllocateId<T>(this DatastoreDb db, T obj, CallSettings callSettings = null)
+            where T : class
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Init(obj, db.AllocateId(Entity<T>.GetKey(obj)));
+        }
+
+        /// <summary>
+        /// Pre-allocate the ids to use.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="obj">The list of entities to update. Must not be null.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        public static void AllocateIds<T>(this DatastoreDb db, IEnumerable<T> obj, CallSettings callSettings = null)
+            where T : class
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Init(obj, db.AllocateIds(obj.Select(Entity<T>.GetKey), callSettings));
+        }
+        #endregion
+
         #region Lookup extensions on entities
         /// <summary>
         /// Looks up a single entity by key.
@@ -185,7 +215,7 @@ namespace HigherLogics.Google.Datastore
         /// Looks up a collection of entities by key asynchronously.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="keys">The key to lookup.</param>
         /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
@@ -207,7 +237,7 @@ namespace HigherLogics.Google.Datastore
         /// Looks up a collection of entities by key asynchronously.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="keys">The key to lookup.</param>
         /// <returns>
         /// A collection of entities with the same size as keys, containing corresponding entity references,
@@ -217,6 +247,113 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             return db.LookupAsync<T>(keys, null, null);
+        }
+
+        /// <summary>
+        /// Looks up a single entity by key.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore transaction.</param>
+        /// <param name="key">The key to lookup.</param>
+        /// <param name="obj">The entity to fill with the retrieved data.</param>
+        /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>The entity with the specified key, or null if no such entity exists.</returns>
+        public static T Lookup<T>(this DatastoreTransaction db, Key key, T obj = null, CallSettings callSettings = null)
+            where T : class
+        {
+            return Entity<T>.From(obj ?? Entity<T>.Create(), db.Lookup(key, callSettings));
+        }
+
+        /// <summary>
+        /// Looks up a single entity by key asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore transaction.</param>
+        /// <param name="key">The key to lookup.</param>
+        /// <param name="obj">The entity to fill with the retrieved data.</param>
+        /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>The entity with the specified key, or null if no such entity exists.</returns>
+        public static async Task<T> LookupAsync<T>(this DatastoreTransaction db, Key key, T obj = null, CallSettings callSettings = null)
+            where T : class
+        {
+            return Entity<T>.From(obj ?? Entity<T>.Create(), await db.LookupAsync(key, callSettings));
+        }
+
+        /// <summary>
+        /// Looks up a collection of entities by key.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore transaction.</param>
+        /// <param name="keys">The keys to lookup.</param>
+        /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>
+        /// A collection of entities with the same size as keys, containing corresponding entity references,
+        /// or null where the key was not found.
+        /// </returns>
+        public static IReadOnlyList<T> Lookup<T>(this DatastoreTransaction db, IEnumerable<Key> keys, CallSettings callSettings = null)
+            where T : class
+        {
+            if (keys == null) throw new ArgumentNullException(nameof(keys));
+            return db.Lookup(keys, callSettings)
+                     .Select(e => e == null ? default(T) : Entity<T>.From(Entity<T>.Create(), e))
+                     .ToList();
+        }
+
+        /// <summary>
+        /// Looks up a collection of entities by key.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore transaction.</param>
+        /// <param name="keys">The keys to lookup.</param>
+        /// <returns>
+        /// A collection of entities with the same size as keys, containing corresponding entity references,
+        /// or null where the key was not found.
+        /// </returns>
+        public static IReadOnlyList<T> Lookup<T>(this DatastoreTransaction db, params Key[] keys)
+            where T : class
+        {
+            return db.Lookup<T>(keys, null);
+        }
+
+        /// <summary>
+        /// Looks up a collection of entities by key asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore transaction.</param>
+        /// <param name="keys">The key to lookup.</param>
+        /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>
+        /// A collection of entities with the same size as keys, containing corresponding entity references,
+        /// or null where the key was not found.
+        /// </returns>
+        public static async Task<IReadOnlyList<T>> LookupAsync<T>(this DatastoreTransaction db, IEnumerable<Key> keys, CallSettings callSettings = null)
+            where T : class
+        {
+            //if (create == null) throw new ArgumentNullException(nameof(create));
+            if (keys == null) throw new ArgumentNullException(nameof(keys));
+            var entities = await db.LookupAsync(keys, callSettings);
+            return entities.Select(e => e == null ? default(T) : Entity<T>.From(Entity<T>.Create(), e))
+                           .ToList();
+        }
+
+        /// <summary>
+        /// Looks up a collection of entities by key asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore transaction.</param>
+        /// <param name="keys">The key to lookup.</param>
+        /// <returns>
+        /// A collection of entities with the same size as keys, containing corresponding entity references,
+        /// or null where the key was not found.
+        /// </returns>
+        public static Task<IReadOnlyList<T>> LookupAsync<T>(this DatastoreTransaction db, params Key[] keys)
+            where T : class
+        {
+            return db.LookupAsync<T>(keys, null);
         }
         #endregion
 
@@ -324,6 +461,75 @@ namespace HigherLogics.Google.Datastore
         ///</returns>
         public static Task<IReadOnlyList<Key>> InsertAsync<T>(this DatastoreDb db, params T[] entities) where T : class =>
             db.InsertAsync<T>(entities, null);
+
+        /// <summary>
+        /// Inserts a single entity, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="obj">The entity to insert. Must not be null.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>
+        /// The key of the inserted entity if it was allocated by the server, or null
+        /// if the inserted entity had a predefined key.
+        /// </returns>
+        public static Key Insert<T>(this DatastoreTransaction db, T obj, CallSettings callSettings = null)
+            where T : class
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Init(obj, db.Insert(Entity<T>.To(new Entity(), obj), callSettings));
+        }
+
+        /// <summary>
+        /// Inserts a single entity, non-transactionally and asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="obj">The entity to insert. Must not be null.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>
+        /// The key of the inserted entity if it was allocated by the server, or null
+        /// if the inserted entity had a predefined key.
+        /// </returns>
+        public static async Task<Key> InsertAsync<T>(this DatastoreTransaction db, T obj, CallSettings callSettings = null)
+            where T : class
+        {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return Init(obj, await db.InsertAsync(Entity<T>.To(new Entity(), obj), callSettings));
+        }
+
+        /// <summary>
+        /// Inserts a collection of entities, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="objs">The entities to insert. Must not be null or contain null entries.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>
+        /// A collection of keys of inserted entities, in the same order as entities. Only
+        /// keys allocated by the server will be returned; any entity with a predefined key
+        /// will have a null value in the collection.
+        ///</returns>
+        public static void Insert<T>(this DatastoreTransaction db, IEnumerable<T> objs)
+            where T : class
+        {
+            if (objs == null) throw new ArgumentNullException(nameof(objs));
+            db.Insert(objs.Select(x => Entity<T>.To(new Entity(), x)));
+        }
+        
+        /// <summary>
+        /// Inserts a collection of entities, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="entities">The entities to insert. Must not be null or contain null entries.</param>
+        /// <returns>
+        /// A collection of keys of inserted entities, in the same order as entities. Only
+        /// keys allocated by the server will be returned; any entity with a predefined key
+        /// will have a null value in the collection.
+        ///</returns>
+        public static void Insert<T>(this DatastoreTransaction db, params T[] entities) where T : class =>
+            db.Insert(entities as IEnumerable<T>);
         #endregion
 
         #region Delete extensions on entities
@@ -365,7 +571,7 @@ namespace HigherLogics.Google.Datastore
         public static void Delete<T>(this DatastoreDb db, params T[] entities)
             where T : class
         {
-            db.Delete(entities as IEnumerable<T>, default(CallSettings));
+            db.Delete(entities, default(CallSettings));
         }
 
         /// <summary>
@@ -379,6 +585,32 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             return db.DeleteAsync(entities as IEnumerable<T>, default(CallSettings));
+        }
+
+        /// <summary>
+        /// Deletes a collection of keys, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="entities">The entities to delete. Must not be null or contain null entries.</param>
+        /// <param name="callSettings">If not null, applies overrides to RPC calls.</param>
+        public static void Delete<T>(this DatastoreTransaction db, IEnumerable<T> entities)
+            where T : class
+        {
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
+            db.Delete(entities.Select(Entity<T>.GetKey));
+        }
+        
+        /// <summary>
+        /// Deletes a collection of keys, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="entities">The entities to delete. Must not be null or contain null entries.</param>
+        public static void Delete<T>(this DatastoreTransaction db, params T[] entities)
+            where T : class
+        {
+            db.Delete(entities as IEnumerable<T>);
         }
         #endregion
 
@@ -472,6 +704,36 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             return db.UpdateAsync<T>(entities, null);
+        }
+
+        /// <summary>
+        /// Updates a collection of entities, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="entities">The entities to update. Must not be null or contain null entries.</param>
+        /// <param name="db">The datastore instance.</param>
+        public static void Update<T>(this DatastoreTransaction db, IEnumerable<T> entities)
+            where T : class
+        {
+            if (entities == null) throw new ArgumentNullException(nameof(entities));
+            db.Update(entities.Select(x =>
+            {
+                if (x == null) throw new ArgumentNullException(nameof(x));
+                return Entity<T>.To(new Entity(), x);
+            }));
+        }
+
+        /// <summary>
+        /// Updates a collection of entities, non-transactionally and asynchronously.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="entities">The entities to update. Must not be null or contain null entries.</param>
+        /// <param name="db">The datastore instance.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public static void Update<T>(this DatastoreTransaction db, params T[] entities)
+            where T : class
+        {
+            db.Update(entities as IEnumerable<T>);
         }
         #endregion
 
@@ -578,6 +840,42 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             return db.UpsertAsync<T>(entities, null);
+        }
+        
+        /// <summary>
+        /// Upserts a collection of entities, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="objs">The entities to upsert. Must not be null or contain null entries.</param>
+        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
+        /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
+        /// entity which had an incomplete key - requiring the server to allocate a new key
+        /// - will have a non-null value in the collection, equal to the new key for the
+        /// entity. Each updated entity or inserted entity with a predefined key will have
+        /// a null value in the collection.</returns>
+        public static void Upsert<T>(this DatastoreTransaction db, IEnumerable<T> objs)
+            where T : class
+        {
+            if (objs == null) throw new ArgumentNullException(nameof(objs));
+            db.Upsert(objs.Select(x => Entity<T>.To(new Entity(), x)));
+        }
+        
+        /// <summary>
+        /// Upserts a collection of entities, non-transactionally.
+        /// </summary>
+        /// <typeparam name="T">The entity type.</typeparam>
+        /// <param name="db">The datastore instance.</param>
+        /// <param name="entities">The entities to upsert. Must not be null or contain null entries.</param>
+        /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
+        /// entity which had an incomplete key - requiring the server to allocate a new key
+        /// - will have a non-null value in the collection, equal to the new key for the
+        /// entity. Each updated entity or inserted entity with a predefined key will have
+        /// a null value in the collection.</returns>
+        public static void Upsert<T>(this DatastoreTransaction db, params T[] entities)
+            where T : class
+        {
+            db.Upsert(entities as IEnumerable<T>);
         }
         #endregion
 
