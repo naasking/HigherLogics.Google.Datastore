@@ -93,7 +93,6 @@ assembly.
 
 # Future Work
 
- * support Key properties as a [Key]
  * add something like [EntityField(string name)] to permit customizing the
    entity field names, which will make it easier to integrate with existing
    data

@@ -96,6 +96,13 @@ namespace MapperTests
         public float E { get; set; }
     }
 
+    class KeyKey
+    {
+        [Key]
+        public Key Id { get; set; }
+        public float E { get; set; }
+    }
+
     public static class EntityTests
     {
         [Fact]
@@ -273,6 +280,20 @@ namespace MapperTests
             };
             var e = Entity<StringKey>.To(new Entity(), x);
             var rt = Entity<StringKey>.From(new StringKey(), e);
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Equal(x.E, rt.E);
+        }
+
+        [Fact]
+        public static void KeyKeyTest()
+        {
+            var x = new KeyKey
+            {
+                Id = "Hello world!".ToKey<KeyKey>(),
+                E = float.Epsilon,
+            };
+            var e = Entity<KeyKey>.To(new Entity(), x);
+            var rt = Entity<KeyKey>.From(new KeyKey(), e);
             Assert.Equal(x.Id, rt.Id);
             Assert.Equal(x.E, rt.E);
         }

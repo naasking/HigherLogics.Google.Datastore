@@ -79,6 +79,11 @@ namespace HigherLogics.Google.Datastore
                         sk = setKey = SetStringKey<T>((Action<T, string>)setter);
                         gk = getKey = GetStringKey<T>((Func<T, string>)getter);
                     }
+                    else if (member.PropertyType == typeof(Key))
+                    {
+                        sk = setKey = (Action<T, Key>)setter;
+                        gk = getKey = (Func<T, Key>)getter;
+                    }
                     else
                     {
                         throw new NotSupportedException($"{member.PropertyType} is not a supported key type. Supported types are: System.Int64, System.String.");
