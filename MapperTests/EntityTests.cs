@@ -302,6 +302,7 @@ namespace MapperTests
             Assert.Equal(x.Id, rt.Id);
             Assert.Equal(x.E, rt.E);
             Assert.Equal(x.Foo, rt.Foo);
+            Assert.True(ReferenceEquals(x.Foo, rt.Foo));
         }
 
         [Fact]
