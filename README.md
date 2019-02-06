@@ -93,6 +93,7 @@ assembly.
 
 # Future Work
 
+ * LINQ query interface
  * add something like [EntityField(string name)] to permit customizing the
    entity field names, which will make it easier to integrate with existing
    data

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>1.0.0-RC1</Version>
+    <Version>1.0.0-beta1</Version>
     <Description>A simple entity auto-mapper.</Description>
     <Copyright>Sandro Magi 2018</Copyright>
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>

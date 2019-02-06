@@ -183,6 +183,7 @@ namespace HigherLogics.Google.Datastore
         public static T Lookup<T>(this DatastoreDb db, Key key, T obj = null, ReadOptions.Types.ReadConsistency? readConsistency = null, CallSettings callSettings = null)
             where T : class
         {
+            //FIXME: maybe should add overloads that accept long and strings as keys?
             return Entity<T>.From(obj ?? Entity<T>.Create(), db.Lookup(key, readConsistency, callSettings));
         }
 
@@ -501,31 +502,13 @@ namespace HigherLogics.Google.Datastore
         /// The key of the inserted entity if it was allocated by the server, or null
         /// if the inserted entity had a predefined key.
         /// </returns>
-        public static Key Insert<T>(this DatastoreTransaction db, T obj, CallSettings callSettings = null)
+        public static void Insert<T>(this DatastoreTransaction db, T obj)
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
-            return Init(obj, db.Insert(Entity<T>.To(new Entity(), obj), callSettings));
+            db.Insert(Entity<T>.To(new Entity(), obj));
         }
-
-        /// <summary>
-        /// Inserts a single entity, non-transactionally and asynchronously.
-        /// </summary>
-        /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
-        /// <param name="obj">The entity to insert. Must not be null.</param>
-        /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
-        /// <returns>
-        /// The key of the inserted entity if it was allocated by the server, or null
-        /// if the inserted entity had a predefined key.
-        /// </returns>
-        public static async Task<Key> InsertAsync<T>(this DatastoreTransaction db, T obj, CallSettings callSettings = null)
-            where T : class
-        {
-            if (obj == null) throw new ArgumentNullException(nameof(obj));
-            return Init(obj, await db.InsertAsync(Entity<T>.To(new Entity(), obj), callSettings));
-        }
-
+        
         /// <summary>
         /// Inserts a collection of entities, non-transactionally.
         /// </summary>
