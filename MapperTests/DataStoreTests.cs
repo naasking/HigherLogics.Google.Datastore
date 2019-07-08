@@ -37,6 +37,24 @@ namespace MapperTests
             Assert.Equal(x.Baz, y.Baz);
         }
 
+        public class ValidatedSample
+        {
+            [Key]
+            public long Id { get; set; }
+            [MaxLength(3)]
+            public string Name { get; set; }
+        }
+
+        [Fact]
+        public static void FailValidation()
+        {
+            var db = Open();
+            var x = new ValidatedSample { Name = "hello world!" };
+            Assert.Throws<ValidationException>(() => db.Insert(x));
+            Assert.Throws<ValidationException>(() => db.Upsert(x));
+            Assert.Throws<ValidationException>(() => db.Update(x));
+        }
+
         [Fact]
         public static void DeleteSimple()
         {

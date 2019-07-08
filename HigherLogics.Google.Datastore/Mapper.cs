@@ -403,6 +403,7 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Validator.ValidateObject(obj, new ValidationContext(obj), true);
             return Init(obj, db.Insert(Entity<T>.To(new Entity(), obj), callSettings));
         }
 
@@ -421,6 +422,7 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Validator.ValidateObject(obj, new ValidationContext(obj), true);
             return Init(obj, await db.InsertAsync(Entity<T>.To(new Entity(), obj), callSettings));
         }
 
@@ -440,7 +442,12 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (objs == null) throw new ArgumentNullException(nameof(objs));
-            return Init(objs, db.Insert(objs.Select(x => Entity<T>.To(new Entity(), x)), callSettings));
+            return Init(objs, db.Insert(objs.Select(x =>
+            {
+                if (x == null) throw new ArgumentNullException(nameof(x));
+                Validator.ValidateObject(x, new ValidationContext(x), true);
+                return Entity<T>.To(new Entity(), x);
+            }), callSettings));
         }
 
         /// <summary>
@@ -460,7 +467,12 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (objs == null) throw new ArgumentNullException(nameof(objs));
-            return Init(objs, await db.InsertAsync(objs.Select(x => Entity<T>.To(new Entity(), x)), callSettings));
+            return Init(objs, await db.InsertAsync(objs.Select(x =>
+            {
+                if (x == null) throw new ArgumentNullException(nameof(x));
+                Validator.ValidateObject(x, new ValidationContext(x), true);
+                return Entity<T>.To(new Entity(), x);
+            }), callSettings));
         }
 
         /// <summary>
@@ -507,6 +519,7 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Validator.ValidateObject(obj, new ValidationContext(obj), true);
             db.Insert(Entity<T>.To(new Entity(), obj));
         }
         
