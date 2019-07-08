@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Google.Api.Gax.Grpc;
 using Google.Cloud.Datastore.V1;
+using System.ComponentModel.DataAnnotations;
 
 namespace HigherLogics.Google.Datastore
 {
@@ -637,6 +638,7 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Validator.ValidateObject(obj, new ValidationContext(obj), true);
             db.Update(Entity<T>.To(new Entity(), obj), callSettings);
         }
 
@@ -651,6 +653,7 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Validator.ValidateObject(obj, new ValidationContext(obj), true);
             return db.UpdateAsync(Entity<T>.To(new Entity(), obj), callSettings);
         }
 
@@ -668,6 +671,7 @@ namespace HigherLogics.Google.Datastore
             db.Update(entities.Select(x =>
             {
                 if (x == null) throw new ArgumentNullException(nameof(x));
+                Validator.ValidateObject(x, new ValidationContext(x), true);
                 return Entity<T>.To(new Entity(), x);
             }), callSettings);
         }
@@ -687,6 +691,7 @@ namespace HigherLogics.Google.Datastore
             return db.UpdateAsync(entities.Select(x =>
             {
                 if (x == null) throw new ArgumentNullException(nameof(x));
+                Validator.ValidateObject(x, new ValidationContext(x), true);
                 return Entity<T>.To(new Entity(), x);
             }), callSettings);
         }
@@ -730,6 +735,7 @@ namespace HigherLogics.Google.Datastore
             db.Update(entities.Select(x =>
             {
                 if (x == null) throw new ArgumentNullException(nameof(x));
+                Validator.ValidateObject(x, new ValidationContext(x), true);
                 return Entity<T>.To(new Entity(), x);
             }));
         }
@@ -762,6 +768,7 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Validator.ValidateObject(obj, new ValidationContext(obj), true);
             return Init(obj, db.Upsert(Entity<T>.To(new Entity(), obj), callSettings));
         }
 
@@ -778,6 +785,7 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (obj == null) throw new ArgumentNullException(nameof(obj));
+            Validator.ValidateObject(obj, new ValidationContext(obj), true);
             return Init(obj, await db.UpsertAsync(Entity<T>.To(new Entity(), obj), callSettings));
         }
 
@@ -797,7 +805,12 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (objs == null) throw new ArgumentNullException(nameof(objs));
-            return Init(objs, db.Upsert(objs.Select(x => Entity<T>.To(new Entity(), x)), callSettings));
+            return Init(objs, db.Upsert(objs.Select(x =>
+            {
+                if (x == null) throw new ArgumentNullException(nameof(x));
+                Validator.ValidateObject(x, new ValidationContext(x), true);
+                return Entity<T>.To(new Entity(), x);
+            }), callSettings));
         }
 
         /// <summary>
@@ -816,7 +829,12 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (objs == null) throw new ArgumentNullException(nameof(objs));
-            return Init(objs, await db.UpsertAsync(objs.Select(x => Entity<T>.To(new Entity(), x)), callSettings));
+            return Init(objs, await db.UpsertAsync(objs.Select(x =>
+            {
+                if (x == null) throw new ArgumentNullException(nameof(x));
+                Validator.ValidateObject(x, new ValidationContext(x), true);
+                return Entity<T>.To(new Entity(), x);
+            }), callSettings));
         }
 
         /// <summary>
@@ -869,7 +887,12 @@ namespace HigherLogics.Google.Datastore
             where T : class
         {
             if (objs == null) throw new ArgumentNullException(nameof(objs));
-            db.Upsert(objs.Select(x => Entity<T>.To(new Entity(), x)));
+            db.Upsert(objs.Select(x =>
+            {
+                if (x == null) throw new ArgumentNullException(nameof(x));
+                Validator.ValidateObject(x, new ValidationContext(x), true);
+                return Entity<T>.To(new Entity(), x);
+            }));
         }
         
         /// <summary>
