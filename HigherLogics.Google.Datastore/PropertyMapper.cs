@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using System.Text;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Google.Cloud.Datastore.V1;
 using System.Runtime.Serialization;
 
@@ -57,6 +58,13 @@ namespace HigherLogics.Google.Datastore
             var from = new Action<Entity, T>[members.Length];
             var to = new Action<T, Entity>[members.Length];
             int propCount = 0;  // this indexes the valid properties
+            //FIXME: add support for [ForeignKey], which designates another property to load
+            //eagerly and to skip processing that attribute as a nested entity. Need to infer whether
+            //ForeignKey references key or entity. The associated entity must already exist or it
+            //will throw an exception.
+            //FIXME: support composite keys, which use Key.WithElement(kind:TField1,name:fieldName1).WithElement(TField2,fieldName2)...
+            //FIXME: consider support for [ComplexType] to specify inlined behaviour (like struct),
+            //[Table] to specify kind, [Inverse] for association mapping?
             for (int i = 0; i < members.Length; ++i)
             {
                 var member = members[i];
@@ -89,7 +97,7 @@ namespace HigherLogics.Google.Datastore
                         throw new NotSupportedException($"{member.PropertyType} is not a supported key type. Supported types are: System.Int64, System.String.");
                     }
                 }
-                else if (member.GetCustomAttribute<IgnoreDatastoreAttributeAttribute>() == null)
+                else if (member.GetCustomAttribute<NotMappedAttribute>() == null)
                 {
                     // this is a reference type, so accumulate a list of getters/setters for the type's members
                     //FIXME: add support for overridable field members via attributes
@@ -147,7 +155,7 @@ namespace HigherLogics.Google.Datastore
                 // this is a reference type, so accumulate a list of getters/setters for the type's members
                 //FIXME: add support for overridable field members via attributes
                 var member = members[i];
-                if (member.GetCustomAttribute<IgnoreDatastoreAttributeAttribute>() == null)
+                if (member.GetCustomAttribute<NotMappedAttribute>() == null)
                 {
                     var tset = typeof(VAction<,>).MakeGenericType(objType, member.PropertyType);
                     from[propCount] = (VAction<T, Entity>)sset

@@ -53,6 +53,8 @@ namespace MapperTests
             Assert.Throws<ValidationException>(() => db.Insert(x));
             Assert.Throws<ValidationException>(() => db.Upsert(x));
             Assert.Throws<ValidationException>(() => db.Update(x));
+            x.Name = "foo";
+            db.Upsert(x);
         }
 
         [Fact]

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Xunit;
 using Google.Cloud.Datastore.V1;
 using Google.Type;
@@ -66,7 +67,7 @@ namespace MapperTests
     {
         [Key]
         public long Id { get; set; }
-        [IgnoreDatastoreAttribute]
+        [NotMapped]
         public string Data { get; set; }
     }
 
