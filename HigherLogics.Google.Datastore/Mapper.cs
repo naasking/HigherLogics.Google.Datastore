@@ -245,7 +245,7 @@ namespace HigherLogics.Google.Datastore
         /// Looks up a collection of entities by key asynchronously.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore transaction.</param>
+        /// <param name="db">The datastore instance.</param>
         /// <param name="keys">The key to lookup.</param>
         /// <param name="readConsistency">The desired read consistency of the lookup, or null to use the default.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
@@ -267,7 +267,7 @@ namespace HigherLogics.Google.Datastore
         /// Looks up a collection of entities by key asynchronously.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore transaction.</param>
+        /// <param name="db">The datastore instance.</param>
         /// <param name="keys">The key to lookup.</param>
         /// <returns>
         /// A collection of entities with the same size as keys, containing corresponding entity references,
@@ -296,7 +296,7 @@ namespace HigherLogics.Google.Datastore
         }
 
         /// <summary>
-        /// Looks up a single entity by key asynchronously.
+        /// Looks up a single entity by key, asynchronously.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore transaction.</param>
@@ -349,7 +349,7 @@ namespace HigherLogics.Google.Datastore
         }
 
         /// <summary>
-        /// Looks up a collection of entities by key asynchronously.
+        /// Looks up a collection of entities by key, asynchronously.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore transaction.</param>
@@ -371,7 +371,7 @@ namespace HigherLogics.Google.Datastore
         }
 
         /// <summary>
-        /// Looks up a collection of entities by key asynchronously.
+        /// Looks up a collection of entities by key, asynchronously.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="db">The datastore transaction.</param>
@@ -505,10 +505,10 @@ namespace HigherLogics.Google.Datastore
             db.InsertAsync<T>(entities, null);
 
         /// <summary>
-        /// Inserts a single entity, non-transactionally.
+        /// Inserts a single entity, transactionally.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="obj">The entity to insert. Must not be null.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>
@@ -524,10 +524,10 @@ namespace HigherLogics.Google.Datastore
         }
         
         /// <summary>
-        /// Inserts a collection of entities, non-transactionally.
+        /// Inserts a collection of entities, transactionally.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="objs">The entities to insert. Must not be null or contain null entries.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>
@@ -543,10 +543,10 @@ namespace HigherLogics.Google.Datastore
         }
         
         /// <summary>
-        /// Inserts a collection of entities, non-transactionally.
+        /// Inserts a collection of entities, transactionally.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="entities">The entities to insert. Must not be null or contain null entries.</param>
         /// <returns>
         /// A collection of keys of inserted entities, in the same order as entities. Only
@@ -613,10 +613,10 @@ namespace HigherLogics.Google.Datastore
         }
 
         /// <summary>
-        /// Deletes a collection of keys, non-transactionally.
+        /// Deletes a collection of keys, transactionally.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="entities">The entities to delete. Must not be null or contain null entries.</param>
         /// <param name="callSettings">If not null, applies overrides to RPC calls.</param>
         public static void Delete<T>(this DatastoreTransaction db, IEnumerable<T> entities)
@@ -627,10 +627,10 @@ namespace HigherLogics.Google.Datastore
         }
         
         /// <summary>
-        /// Deletes a collection of keys, non-transactionally.
+        /// Deletes a collection of keys, transactionally.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="entities">The entities to delete. Must not be null or contain null entries.</param>
         public static void Delete<T>(this DatastoreTransaction db, params T[] entities)
             where T : class
@@ -736,11 +736,11 @@ namespace HigherLogics.Google.Datastore
         }
 
         /// <summary>
-        /// Updates a collection of entities, non-transactionally.
+        /// Updates a collection of entities, transactionally.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="entities">The entities to update. Must not be null or contain null entries.</param>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         public static void Update<T>(this DatastoreTransaction db, IEnumerable<T> entities)
             where T : class
         {
@@ -754,11 +754,11 @@ namespace HigherLogics.Google.Datastore
         }
 
         /// <summary>
-        /// Updates a collection of entities, non-transactionally and asynchronously.
+        /// Updates a collection of entities, transactionally and asynchronously.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
         /// <param name="entities">The entities to update. Must not be null or contain null entries.</param>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         public static void Update<T>(this DatastoreTransaction db, params T[] entities)
             where T : class
@@ -885,10 +885,10 @@ namespace HigherLogics.Google.Datastore
         }
         
         /// <summary>
-        /// Upserts a collection of entities, non-transactionally.
+        /// Upserts a collection of entities, transactionally.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="objs">The entities to upsert. Must not be null or contain null entries.</param>
         /// <param name="callSettings">If not null, applies overrides to this RPC call.</param>
         /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
@@ -909,10 +909,10 @@ namespace HigherLogics.Google.Datastore
         }
         
         /// <summary>
-        /// Upserts a collection of entities, non-transactionally.
+        /// Upserts a collection of entities, transactionally.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>
-        /// <param name="db">The datastore instance.</param>
+        /// <param name="db">The datastore transaction.</param>
         /// <param name="entities">The entities to upsert. Must not be null or contain null entries.</param>
         /// <returns>A collection of allocated keys, in the same order as entities. Each inserted
         /// entity which had an incomplete key - requiring the server to allocate a new key
