@@ -104,6 +104,19 @@ namespace MapperTests
         public float E { get; set; }
         public Entity Foo { get; set; }
     }
+    class Fk
+    {
+        [Key]
+        public Key Id { get; set; }
+
+        [ForeignKey(nameof(Foo))]
+        public string FooId { get; set; }
+        public StringKey Foo { get; set; }
+
+        [ForeignKey(nameof(BarId))]
+        public KeyKey Bar { get; set; }
+        public Key BarId { get; set; }
+    }
 
     public static class EntityTests
     {
@@ -304,6 +317,36 @@ namespace MapperTests
             Assert.Equal(x.E, rt.E);
             Assert.Equal(x.Foo, rt.Foo);
             Assert.True(ReferenceEquals(x.Foo, rt.Foo));
+        }
+
+        [Fact]
+        public static void FKAttributeTest()
+        {
+            var bar = new KeyKey { Id = "hello!".ToKey<KeyKey>(), E = float.MinValue, };
+            var foo = new StringKey
+            {
+                Id = "Hello world!",
+                E = float.Epsilon,
+            };
+            var x = new Fk
+            {
+                Id = "Hello world!".ToKey<KeyKey>(),
+                FooId = foo.Id,
+                Foo = foo,
+                BarId = bar.Id,
+                Bar = bar,
+            };
+            var e = Entity<Fk>.To(new Entity(), x);
+            Assert.Null(e["Foo"]);
+            Assert.Null(e["Bar"]);
+            Assert.NotNull(e["FooId"]);
+            Assert.NotNull(e["BarId"]);
+            var rt = Entity<Fk>.From(new Fk(), e);
+            Assert.Equal(x.Id, rt.Id);
+            Assert.Equal(x.BarId, rt.BarId);
+            Assert.Null(rt.Bar);
+            Assert.Equal(x.FooId, rt.FooId);
+            Assert.Null(rt.Foo);
         }
 
         [Fact]

@@ -101,6 +101,14 @@ namespace HigherLogics.Google.Datastore
             new Key().WithElement(Kind<T>(), name);
 
         /// <summary>
+        /// Check if a key is complete.
+        /// </summary>
+        /// <param name="key">The key instance.</param>
+        /// <returns>True if the key is complete, false otherwise.</returns>
+        public static bool IsComplete(this Key key) =>
+            key.Name() != null || key.Id() > 0;
+
+        /// <summary>
         /// Create an incomplete key for a given type.
         /// </summary>
         /// <typeparam name="T">The entity type.</typeparam>

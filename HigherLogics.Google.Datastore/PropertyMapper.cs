@@ -58,10 +58,7 @@ namespace HigherLogics.Google.Datastore
             var from = new Action<Entity, T>[members.Length];
             var to = new Action<T, Entity>[members.Length];
             int propCount = 0;  // this indexes the valid properties
-            //FIXME: add support for [ForeignKey], which designates another property to load
-            //eagerly and to skip processing that attribute as a nested entity. Need to infer whether
-            //ForeignKey references key or entity. The associated entity must already exist or it
-            //will throw an exception.
+            var skip = FindForeignKeys(objType, members);
             //FIXME: support composite keys, which use Key.WithElement(kind:TField1,name:fieldName1).WithElement(TField2,fieldName2)...
             //FIXME: consider support for [ComplexType] to specify inlined behaviour (like struct),
             //[Table] to specify kind, [Inverse] for association mapping?
@@ -69,35 +66,24 @@ namespace HigherLogics.Google.Datastore
             {
                 var member = members[i];
                 // extract delegates from Value<TProperty>.From/To for each member of T
-                if (member.GetCustomAttribute<KeyAttribute>() != null)
+                if (member.GetCustomAttribute<NotMappedAttribute>() != null || skip.Contains(member))
+                    continue;
+                else if (member.GetCustomAttribute<KeyAttribute>() != null)
                 {
+                    //FIXME: in principle, could support composite keys where multiple properties have [Key] attributes
                     if (gk != null)
                         throw new NotSupportedException($"Duplicate [Key] property {member.DeclaringType}.{member.Name}");
-                    var setter = member.SetMethod?.CreateDelegate(typeof(Action<,>).MakeGenericType(objType, member.PropertyType));
-                    var getter = member.GetMethod?.CreateDelegate(typeof(Func<,>).MakeGenericType(objType, member.PropertyType));
-
-                    // API supports string and long keys
-                    if (member.PropertyType == typeof(long))
+                    else if (IsKeyType<T>(member, objType, out sk, out gk))
                     {
-                        sk = setKey = SetLongKey<T>((Action<T, long>)setter);
-                        gk = getKey = GetLongKey<T>((Func<T, long>)getter);
-                    }
-                    else if (member.PropertyType == typeof(string))
-                    {
-                        sk = setKey = SetStringKey<T>((Action<T, string>)setter);
-                        gk = getKey = GetStringKey<T>((Func<T, string>)getter);
-                    }
-                    else if (member.PropertyType == typeof(Key))
-                    {
-                        sk = setKey = (Action<T, Key>)setter;
-                        gk = getKey = (Func<T, Key>)getter;
+                        getKey = gk;
+                        setKey = sk;
                     }
                     else
                     {
-                        throw new NotSupportedException($"{member.PropertyType} is not a supported key type. Supported types are: System.Int64, System.String.");
+                        throw new NotSupportedException($"{objType.Name}.{member.Name}: {member.PropertyType} is not a supported key type. Supported types are: System.Int64, System.String.");
                     }
                 }
-                else if (member.GetCustomAttribute<NotMappedAttribute>() == null)
+                else
                 {
                     // this is a reference type, so accumulate a list of getters/setters for the type's members
                     //FIXME: add support for overridable field members via attributes
@@ -136,6 +122,60 @@ namespace HigherLogics.Google.Datastore
                     to[i](obj, e);
                 return e;
             };
+        }
+
+        HashSet<PropertyInfo> FindForeignKeys(Type objType, PropertyInfo[] members)
+        {
+            var skip = new HashSet<PropertyInfo>();
+            for (int i = 0; i < members.Length; ++i)
+            {
+                var mem = members[i];
+                var fk = mem.GetCustomAttribute<ForeignKeyAttribute>();
+                if (fk != null)
+                {
+                    if (mem.Name.Equals(fk.Name, StringComparison.Ordinal))
+                        throw new MemberAccessException($"{objType.Name}.{mem.Name}: [ForeignKey] circularly references itself.");
+                    var prop = IsFkType(mem.PropertyType)
+                             ? Array.Find(members, x => x.Name.Equals(fk.Name, StringComparison.Ordinal))
+                             : mem;
+                    if (prop == null)
+                        throw new MemberAccessException($"{objType.Name}.{mem.Name}: [ForeignKey] does not designate a valid property.");
+                    skip.Add(prop);
+                }
+            }
+            return skip;
+        }
+
+        bool IsFkType(Type type) =>
+            type == typeof(long) || type == typeof(string) || type == typeof(Key) || type == typeof(long?);
+
+        bool IsKeyType<T>(PropertyInfo member, Type objType, out Action<T, Key> sk, out Func<T, Key> gk)
+        {
+            var setter = member.SetMethod?.CreateDelegate(typeof(Action<,>).MakeGenericType(objType, member.PropertyType));
+            var getter = member.GetMethod?.CreateDelegate(typeof(Func<,>).MakeGenericType(objType, member.PropertyType));
+
+            if (member.PropertyType == typeof(long))
+            {
+                sk = SetLongKey<T>((Action<T, long>)setter);
+                gk = GetLongKey<T>((Func<T, long>)getter);
+            }
+            else if (member.PropertyType == typeof(string))
+            {
+                sk = SetStringKey<T>((Action<T, string>)setter);
+                gk = GetStringKey<T>((Func<T, string>)getter);
+            }
+            else if (member.PropertyType == typeof(Key))
+            {
+                sk = (Action<T, Key>)setter;
+                gk = (Func<T, Key>)getter;
+            }
+            else
+            {
+                gk = null;
+                sk = null;
+                return false;
+            }
+            return true;
         }
 
         void MapStruct<T>(out Func<T, Key> getKey, out Action<T, Key> setKey, out Func<T, Entity, T> From, out Func<Entity, T, Entity> To)
@@ -187,7 +227,7 @@ namespace HigherLogics.Google.Datastore
         #region Key getters/setters
         static Func<T, Key> GetLongKey<T>(Func<T, long> getKey)
         {
-            if (getKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a getter with a [Key] attribute.");
+            if (getKey == null) throw new ArgumentException($"{typeof(T).FullName} is missing a getter with a [Key] attribute.", getKey.Method.Name.Substring(4));
             return (obj) =>
             {
                 var id = getKey(obj);
@@ -198,24 +238,24 @@ namespace HigherLogics.Google.Datastore
 
         static Func<T, Key> GetStringKey<T>(Func<T, string> getKey)
         {
-            if (getKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a getter with a [Key] attribute.");
+            if (getKey == null) throw new ArgumentException($"{typeof(T).FullName} is missing a getter with a [Key] attribute.", getKey.Method.Name.Substring(4));
             return (obj) =>
             {
                 var id = getKey(obj);
-                if (id == null) throw new ArgumentNullException($"{typeof(T).FullName} [Key] property is a string and must not be null.", getKey.Method.Name.Substring(4));
+                if (id == null) throw new ArgumentNullException(getKey.Method.Name.Substring(4), $"{typeof(T).FullName} [Key] property is a string and must not be null.");
                 return new Key().WithElement(Entity<T>.Kind, id);
             };
         }
 
         static Action<T, Key> SetLongKey<T>(Action<T, long> setKey)
         {
-            if (setKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a setter with a [Key] attribute.");
+            if (setKey == null) throw new ArgumentException($"{typeof(T).FullName} is missing a setter with a [Key] attribute.", setKey.Method.Name.Substring(4));
             return (obj, key) => setKey(obj, key.Id());
         }
 
         static Action<T, Key> SetStringKey<T>(Action<T, string> setKey)
         {
-            if (setKey == null) throw new MissingMemberException($"{typeof(T).FullName} is missing a setter with a [Key] attribute.");
+            if (setKey == null) throw new ArgumentException($"{typeof(T).FullName} is missing a setter with a [Key] attribute.", setKey.Method.Name.Substring(4));
             return (obj, key) => setKey(obj, key.Name());
         }
         #endregion
